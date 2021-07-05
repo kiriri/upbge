@@ -55,18 +55,18 @@ GHOST_SystemPathsUnix::~GHOST_SystemPathsUnix()
 {
 }
 
-const char *GHOST_SystemPathsUnix::getSystemDir(int, const char *versionstr) const
+const GHOST_TUns8 *GHOST_SystemPathsUnix::getSystemDir(int, const char *versionstr) const
 {
   /* no prefix assumes a portable build which only uses bundled scripts */
   if (static_path) {
     static string system_path = string(static_path) + "/upbge/" + versionstr;
-    return system_path.c_str();
+    return (GHOST_TUns8 *)system_path.c_str();
   }
 
   return NULL;
 }
 
-const char *GHOST_SystemPathsUnix::getUserDir(int version, const char *versionstr) const
+const GHOST_TUns8 *GHOST_SystemPathsUnix::getUserDir(int version, const char *versionstr) const
 {
   static string user_path = "";
   static int last_version = 0;
@@ -86,7 +86,7 @@ const char *GHOST_SystemPathsUnix::getUserDir(int version, const char *versionst
         return NULL;
       }
     }
-    return user_path.c_str();
+    return (GHOST_TUns8 *)user_path.c_str();
   }
   else {
     if (user_path.empty() || last_version != version) {
@@ -107,11 +107,11 @@ const char *GHOST_SystemPathsUnix::getUserDir(int version, const char *versionst
       }
     }
 
-    return user_path.c_str();
+    return (const GHOST_TUns8 *)user_path.c_str();
   }
 }
 
-const char *GHOST_SystemPathsUnix::getUserSpecialDir(GHOST_TUserSpecialDirTypes type) const
+const GHOST_TUns8 *GHOST_SystemPathsUnix::getUserSpecialDir(GHOST_TUserSpecialDirTypes type) const
 {
   const char *type_str;
 
@@ -164,10 +164,10 @@ const char *GHOST_SystemPathsUnix::getUserSpecialDir(GHOST_TUserSpecialDirTypes 
   }
 
   path = path_stream.str();
-  return path[0] ? path.c_str() : NULL;
+  return path[0] ? (const GHOST_TUns8 *)path.c_str() : NULL;
 }
 
-const char *GHOST_SystemPathsUnix::getBinaryDir() const
+const GHOST_TUns8 *GHOST_SystemPathsUnix::getBinaryDir() const
 {
   return NULL;
 }

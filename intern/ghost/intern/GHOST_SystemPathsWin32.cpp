@@ -38,7 +38,7 @@ GHOST_SystemPathsWin32::~GHOST_SystemPathsWin32()
 {
 }
 
-const char *GHOST_SystemPathsWin32::getSystemDir(int, const char *versionstr) const
+const GHOST_TUns8 *GHOST_SystemPathsWin32::getSystemDir(int, const char *versionstr) const
 {
   /* 1 utf-16 might translate into 3 utf-8. 2 utf-16 translates into 4 utf-8. */
   static char knownpath[MAX_PATH * 3 + 128] = {0};
@@ -52,13 +52,13 @@ const char *GHOST_SystemPathsWin32::getSystemDir(int, const char *versionstr) co
     CoTaskMemFree(knownpath_16);
     strcat(knownpath, "\\UPBGE\\Blender\\");
     strcat(knownpath, versionstr);
-    return knownpath;
+    return (GHOST_TUns8 *)knownpath;
   }
 
   return NULL;
 }
 
-const char *GHOST_SystemPathsWin32::getUserDir(int, const char *versionstr) const
+const GHOST_TUns8 *GHOST_SystemPathsWin32::getUserDir(int, const char *versionstr) const
 {
   static char knownpath[MAX_PATH * 3 + 128] = {0};
   PWSTR knownpath_16 = NULL;
@@ -71,13 +71,13 @@ const char *GHOST_SystemPathsWin32::getUserDir(int, const char *versionstr) cons
     CoTaskMemFree(knownpath_16);
     strcat(knownpath, "\\UPBGE\\Blender\\");
     strcat(knownpath, versionstr);
-    return knownpath;
+    return (GHOST_TUns8 *)knownpath;
   }
 
   return NULL;
 }
 
-const char *GHOST_SystemPathsWin32::getUserSpecialDir(GHOST_TUserSpecialDirTypes type) const
+const GHOST_TUns8 *GHOST_SystemPathsWin32::getUserSpecialDir(GHOST_TUserSpecialDirTypes type) const
 {
   GUID folderid;
 
@@ -114,21 +114,21 @@ const char *GHOST_SystemPathsWin32::getUserSpecialDir(GHOST_TUserSpecialDirTypes
   if (hResult == S_OK) {
     conv_utf_16_to_8(knownpath_16, knownpath, MAX_PATH * 3);
     CoTaskMemFree(knownpath_16);
-    return knownpath;
+    return (GHOST_TUns8 *)knownpath;
   }
 
   CoTaskMemFree(knownpath_16);
   return NULL;
 }
 
-const char *GHOST_SystemPathsWin32::getBinaryDir() const
+const GHOST_TUns8 *GHOST_SystemPathsWin32::getBinaryDir() const
 {
   static char fullname[MAX_PATH * 3] = {0};
   wchar_t fullname_16[MAX_PATH * 3];
 
   if (GetModuleFileNameW(0, fullname_16, MAX_PATH)) {
     conv_utf_16_to_8(fullname_16, fullname, MAX_PATH * 3);
-    return fullname;
+    return (GHOST_TUns8 *)fullname;
   }
 
   return NULL;

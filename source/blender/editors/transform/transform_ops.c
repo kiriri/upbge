@@ -471,6 +471,68 @@ static int transform_modal(bContext *C, wmOperator *op, const wmEvent *event)
   return exit_code;
 }
 
+static int transform_modal_3d(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  BLI_assert(event->type == EVT_XR_ACTION);
+  BLI_assert(event->custom == EVT_DATA_XR);
+  BLI_assert(event->customdata);
+
+  const wmXrActionData *actiondata = event->customdata;
+  TransInfo *t = op->customdata;
+  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  Scene *scene = CTX_data_scene(C);
+  View3D *v3d = CTX_wm_view3d(C);
+  ARegion *region = CTX_wm_region(C);
+  RegionView3D *rv3d = region->regiondata;
+  wmWindowManager *wm = CTX_wm_manager(C);
+  wmXrData *xr = &wm->xr;
+  float lens_prev;
+  float clip_start_prev, clip_end_prev;
+  float viewmat_prev[4][4];
+  int retval;
+
+  wmEvent event_mut;
+  memcpy(&event_mut, event, sizeof(wmEvent));
+
+  /* Replace window view parameters with XR surface counterparts. */
+  ED_view3d_view_params_get(v3d, rv3d, &lens_prev, &clip_start_prev, &clip_end_prev, viewmat_prev);
+  ED_view3d_view_params_set(
+      depsgraph,
+      scene,
+      v3d,
+      region,
+      actiondata->eye_lens,
+      xr->session_settings.clip_start,
+      xr->session_settings.clip_end,
+      t->viewmat); /* Use viewmat from when transform was invoked instead of latest XR viewmat. */
+
+  map_to_pixel(event_mut.mval,
+               actiondata->controller_loc,
+               t->viewmat,
+               rv3d->winmat,
+               region->winx,
+               region->winy);
+
+  if (event->val == KM_PRESS) {
+    event_mut.type = MOUSEMOVE;
+  }
+  else if (event->val == KM_RELEASE) {
+    event_mut.type = LEFTMOUSE;
+  }
+  else {
+    /* XR events currently only support press and release. */
+    BLI_assert(false);
+  }
+
+  retval = transform_modal(C, op, &event_mut);
+
+  /* Restore window view. */
+  ED_view3d_view_params_set(
+      depsgraph, scene, v3d, region, lens_prev, clip_start_prev, clip_end_prev, viewmat_prev);
+
+  return retval;
+}
+
 static void transform_cancel(bContext *C, wmOperator *op)
 {
   TransInfo *t = op->customdata;
@@ -529,6 +591,56 @@ static int transform_invoke(bContext *C, wmOperator *op, const wmEvent *event)
   }
 
   return OPERATOR_RUNNING_MODAL;
+}
+
+static int transform_invoke_3d(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  BLI_assert(event->type == EVT_XR_ACTION);
+  BLI_assert(event->custom == EVT_DATA_XR);
+  BLI_assert(event->customdata);
+
+  const wmXrActionData *actiondata = event->customdata;
+  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  Scene *scene = CTX_data_scene(C);
+  View3D *v3d = CTX_wm_view3d(C);
+  ARegion *region = CTX_wm_region(C);
+  RegionView3D *rv3d = region->regiondata;
+  wmWindowManager *wm = CTX_wm_manager(C);
+  wmXrData *xr = &wm->xr;
+  float lens_prev;
+  float clip_start_prev, clip_end_prev;
+  float viewmat_prev[4][4];
+  int retval;
+
+  wmEvent event_mut;
+  memcpy(&event_mut, event, sizeof(wmEvent));
+  event_mut.type = LEFTMOUSE;
+
+  /* Replace window view parameters with XR surface counterparts. */
+  ED_view3d_view_params_get(v3d, rv3d, &lens_prev, &clip_start_prev, &clip_end_prev, viewmat_prev);
+  ED_view3d_view_params_set(depsgraph,
+                            scene,
+                            v3d,
+                            region,
+                            actiondata->eye_lens,
+                            xr->session_settings.clip_start,
+                            xr->session_settings.clip_end,
+                            actiondata->eye_viewmat);
+
+  map_to_pixel(event_mut.mval,
+               actiondata->controller_loc,
+               actiondata->eye_viewmat,
+               rv3d->winmat,
+               region->winx,
+               region->winy);
+
+  retval = transform_invoke(C, op, &event_mut);
+
+  /* Restore window view. */
+  ED_view3d_view_params_set(
+      depsgraph, scene, v3d, region, lens_prev, clip_start_prev, clip_end_prev, viewmat_prev);
+
+  return retval;
 }
 
 static bool transform_poll_property(const bContext *UNUSED(C),
@@ -732,8 +844,10 @@ static void TRANSFORM_OT_translate(struct wmOperatorType *ot)
 
   /* api callbacks */
   ot->invoke = transform_invoke;
+  ot->invoke_3d = transform_invoke_3d;
   ot->exec = transform_exec;
   ot->modal = transform_modal;
+  ot->modal_3d = transform_modal_3d;
   ot->cancel = transform_cancel;
   ot->poll = ED_operator_screenactive;
   ot->poll_property = transform_poll_property;
@@ -758,8 +872,10 @@ static void TRANSFORM_OT_resize(struct wmOperatorType *ot)
 
   /* api callbacks */
   ot->invoke = transform_invoke;
+  ot->invoke_3d = transform_invoke_3d;
   ot->exec = transform_exec;
   ot->modal = transform_modal;
+  ot->modal_3d = transform_modal_3d;
   ot->cancel = transform_cancel;
   ot->poll = ED_operator_screenactive;
   ot->poll_property = transform_poll_property;
@@ -846,8 +962,10 @@ static void TRANSFORM_OT_rotate(struct wmOperatorType *ot)
 
   /* api callbacks */
   ot->invoke = transform_invoke;
+  ot->invoke_3d = transform_invoke_3d;
   ot->exec = transform_exec;
   ot->modal = transform_modal;
+  ot->modal_3d = transform_modal_3d;
   ot->cancel = transform_cancel;
   ot->poll = transform_rotate_poll;
   ot->poll_property = transform_poll_property;
@@ -1247,8 +1365,10 @@ static void TRANSFORM_OT_transform(struct wmOperatorType *ot)
 
   /* api callbacks */
   ot->invoke = transform_invoke;
+  ot->invoke_3d = transform_invoke_3d;
   ot->exec = transform_exec;
   ot->modal = transform_modal;
+  ot->modal_3d = transform_modal_3d;
   ot->cancel = transform_cancel;
   ot->poll = ED_operator_screenactive;
   ot->poll_property = transform_poll_property;

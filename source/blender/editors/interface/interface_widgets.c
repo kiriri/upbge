@@ -769,7 +769,7 @@ static void round_box__edges(
   BLI_rctf_rcti_copy(&wt->uniform_params.rect, rect);
   BLI_rctf_init(&wt->uniform_params.recti, minxi, maxxi, minyi, maxyi);
 
-  /* Multiply by radius. */
+  /* mult */
   for (int a = 0; a < WIDGET_CURVE_RESOLU; a++) {
     veci[a][0] = radi * cornervec[a][0];
     veci[a][1] = radi * cornervec[a][1];
@@ -2014,8 +2014,7 @@ static void widget_draw_text(const uiFontStyle *fstyle,
         /* insert composite string into cursor pos */
         BLI_snprintf((char *)drawstr,
                      UI_MAX_DRAW_STR,
-                     "%.*s%s%s",
-                     but->pos,
+                     "%s%s%s",
                      but->editstr,
                      ime_data->str_composite,
                      but->editstr + but->pos);
@@ -2031,11 +2030,8 @@ static void widget_draw_text(const uiFontStyle *fstyle,
   /* text button selection, cursor, composite underline */
   if (but->editstr && but->pos != -1) {
     int but_pos_ofs;
-
-#ifdef WITH_INPUT_IME
-    bool ime_reposition_window = false;
-    int ime_win_x, ime_win_y;
-#endif
+    /* Shape of the cursor for drawing. */
+    rcti but_cursor_shape;
 
     /* text button selection */
     if ((but->selend - but->selsta) > 0) {
@@ -2060,28 +2056,14 @@ static void widget_draw_text(const uiFontStyle *fstyle,
             immVertexFormat(), "pos", GPU_COMP_I32, 2, GPU_FETCH_INT_TO_FLOAT);
         immBindBuiltinProgram(GPU_SHADER_2D_UNIFORM_COLOR);
 
-        rcti selection_shape;
-        selection_shape.xmin = rect->xmin + selsta_draw;
-        selection_shape.xmax = min_ii(rect->xmin + selwidth_draw, rect->xmax - 2);
-        selection_shape.ymin = rect->ymin + U.pixelsize;
-        selection_shape.ymax = rect->ymax - U.pixelsize;
         immUniformColor4ubv(wcol->item);
         immRecti(pos,
-                 selection_shape.xmin,
-                 selection_shape.ymin,
-                 selection_shape.xmax,
-                 selection_shape.ymax);
+                 rect->xmin + selsta_draw,
+                 rect->ymin + U.pixelsize,
+                 min_ii(rect->xmin + selwidth_draw, rect->xmax - 2),
+                 rect->ymax - U.pixelsize);
 
         immUnbindProgram();
-
-#ifdef WITH_INPUT_IME
-        /* IME candidate window uses selection position. */
-        if (!ime_reposition_window) {
-          ime_reposition_window = true;
-          ime_win_x = selection_shape.xmin;
-          ime_win_y = selection_shape.ymin;
-        }
-#endif
       }
     }
 
@@ -2114,8 +2096,6 @@ static void widget_draw_text(const uiFontStyle *fstyle,
 
       immUniformThemeColor(TH_WIDGET_TEXT_CURSOR);
 
-      /* Shape of the cursor for drawing. */
-      rcti but_cursor_shape;
       but_cursor_shape.xmin = (rect->xmin + t) - U.pixelsize;
       but_cursor_shape.ymin = rect->ymin + U.pixelsize;
       but_cursor_shape.xmax = (rect->xmin + t) + U.pixelsize;
@@ -2129,23 +2109,15 @@ static void widget_draw_text(const uiFontStyle *fstyle,
                but_cursor_shape.ymax);
 
       immUnbindProgram();
-
-#ifdef WITH_INPUT_IME
-      /* IME candidate window uses cursor position. */
-      if (!ime_reposition_window) {
-        ime_reposition_window = true;
-        ime_win_x = but_cursor_shape.xmax + 5;
-        ime_win_y = but_cursor_shape.ymin + 3;
-      }
-#endif
     }
 
 #ifdef WITH_INPUT_IME
-    /* ime cursor following */
-    if (ime_reposition_window) {
-      ui_but_ime_reposition(but, ime_win_x, ime_win_y, false);
-    }
     if (ime_data && ime_data->composite_len) {
+      /* ime cursor following */
+      if (but->pos >= but->ofs) {
+        ui_but_ime_reposition(but, but_cursor_shape.xmax + 5, but_cursor_shape.ymin + 3, false);
+      }
+
       /* composite underline */
       widget_draw_text_ime_underline(fstyle, wcol, but, rect, ime_data, drawstr);
     }
@@ -2522,7 +2494,7 @@ static void widget_draw_text_icon(const uiFontStyle *fstyle,
     ui_text_clip_middle(fstyle, but, rect);
   }
 
-  /* Always draw text for text-button cursor. */
+  /* always draw text for textbutton cursor */
   widget_draw_text(fstyle, wcol, but, rect);
 
   ui_but_text_password_hide(password_str, but, true);

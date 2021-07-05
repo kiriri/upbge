@@ -480,6 +480,75 @@ int WM_event_absolute_delta_y(const struct wmEvent *event)
 /** \} */
 
 /* -------------------------------------------------------------------- */
+/** \name XR Input Access
+ * \{ */
+
+void WM_event_xr_data(const wmEvent *event,
+                      char **actionmap,
+                      char **action,
+                      char *type,
+                      float state[2],
+                      float state_other[2],
+                      float *float_threshold,
+                      float controller_loc[3],
+                      float controller_rot[4],
+                      float controller_loc_other[3],
+                      float controller_rot_other[4],
+                      float *eye_lens,
+                      float eye_viewmat[4][4],
+                      bool *bimanual)
+{
+  const wmXrActionData *data = event->customdata;
+
+  if (actionmap) {
+    strcpy(*actionmap, data->actionmap);
+  }
+  if (action) {
+    strcpy(*action, data->action);
+  }
+  if (type) {
+    *type = data->type;
+  }
+  if (state) {
+    copy_v2_v2(state, data->state);
+  }
+  if (state_other) {
+    copy_v2_v2(state_other, data->state_other);
+  }
+  if (float_threshold) {
+    *float_threshold = data->float_threshold;
+  }
+  if (controller_loc) {
+    copy_v3_v3(controller_loc, data->controller_loc);
+  }
+  if (controller_rot) {
+    copy_v4_v4(controller_rot, data->controller_rot);
+  }
+  if (controller_loc_other) {
+    copy_v3_v3(controller_loc_other, data->controller_loc_other);
+  }
+  if (controller_rot_other) {
+    copy_v4_v4(controller_rot_other, data->controller_rot_other);
+  }
+  if (eye_lens) {
+    *eye_lens = data->eye_lens;
+  }
+  if (eye_viewmat) {
+    copy_m4_m4(eye_viewmat, data->eye_viewmat);
+  }
+  if (bimanual) {
+    *bimanual = data->bimanual;
+  }
+}
+
+bool WM_event_is_xr(const struct wmEvent *event)
+{
+  return (event->custom == EVT_DATA_XR);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
 /** \name Event IME Input Access
  * \{ */
 

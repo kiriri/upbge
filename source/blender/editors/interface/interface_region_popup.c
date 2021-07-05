@@ -341,7 +341,7 @@ static void ui_popup_block_position(wmWindow *window,
       block->safety.ymax = block->rect.ymax + s1;
     }
 
-    /* Exception for switched pull-downs. */
+    /* exception for switched pulldowns... */
     if (dir1 && (dir1 & block->direction) == 0) {
       if (dir2 == UI_DIR_RIGHT) {
         block->safety.xmax = block->rect.xmax + s2;

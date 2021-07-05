@@ -28,6 +28,7 @@
 #include "GHOST_EventManager.h"
 #include "GHOST_Debug.h"
 #include <algorithm>
+#include <stdio.h>  // [mce] temp debug
 
 GHOST_EventManager::GHOST_EventManager()
 {
@@ -45,14 +46,14 @@ GHOST_EventManager::~GHOST_EventManager()
   }
 }
 
-uint32_t GHOST_EventManager::getNumEvents()
+GHOST_TUns32 GHOST_EventManager::getNumEvents()
 {
-  return (uint32_t)m_events.size();
+  return (GHOST_TUns32)m_events.size();
 }
 
-uint32_t GHOST_EventManager::getNumEvents(GHOST_TEventType type)
+GHOST_TUns32 GHOST_EventManager::getNumEvents(GHOST_TEventType type)
 {
-  uint32_t numEvents = 0;
+  GHOST_TUns32 numEvents = 0;
   TEventStack::iterator p;
   for (p = m_events.begin(); p != m_events.end(); ++p) {
     if ((*p)->getType() == type) {

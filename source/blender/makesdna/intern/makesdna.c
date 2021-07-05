@@ -427,7 +427,7 @@ static int add_name(const char *str)
     int isfuncptr = (strchr(str + 1, '(')) != NULL;
 
     DEBUG_PRINTF(3, "\t\t\t\t*** Function pointer or multidim array pointer found\n");
-    /* function-pointer: transform the type (sometimes). */
+    /* functionpointer: transform the type (sometimes) */
     int i = 0;
 
     while (str[i] != ')') {

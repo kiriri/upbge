@@ -33,6 +33,13 @@ struct ARegion;
 struct GHOST_TabletData;
 struct ScrArea;
 
+#ifdef WITH_XR_OPENXR
+struct GHOST_XrPose;
+struct wmSurface;
+struct wmXrAction;
+struct wmXrEyeData;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -147,6 +154,20 @@ void wm_event_free_handler(wmEventHandler *handler);
 void wm_event_do_handlers(bContext *C);
 
 void wm_event_add_ghostevent(wmWindowManager *wm, wmWindow *win, int type, void *customdata);
+
+#ifdef WITH_XR_OPENXR
+void wm_event_add_xrevent(const char *action_set_name,
+                          const struct wmXrAction *action,
+                          const struct GHOST_XrPose *controller_pose,
+                          const struct GHOST_XrPose *controller_pose_other,
+                          const struct wmXrEyeData *eye_data,
+                          struct wmSurface *surface,
+                          wmWindow *win,
+                          unsigned int subaction_idx,
+                          unsigned int subaction_idx_other,
+                          short val,
+                          bool press_start);
+#endif
 
 void wm_event_do_depsgraph(bContext *C, bool is_after_open_file);
 void wm_event_do_refresh_wm_and_depsgraph(bContext *C);

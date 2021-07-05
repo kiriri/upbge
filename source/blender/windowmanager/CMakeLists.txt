@@ -186,7 +186,7 @@ if(WITH_INPUT_NDOF)
   add_definitions(-DWITH_INPUT_NDOF)
 endif()
 
-if(WIN32 OR APPLE)
+if(WIN32)
   if(WITH_INPUT_IME)
     add_definitions(-DWITH_INPUT_IME)
   endif()
@@ -204,12 +204,16 @@ if(WITH_XR_OPENXR)
 
   list(APPEND INC
     xr
+    # for wm_xr_operators.c: BKE_editmesh.h
+    ../bmesh
   )
 
   list(APPEND SRC
     xr/intern/wm_xr.c
-    xr/intern/wm_xr_actions.c
+    xr/intern/wm_xr_action.c
+    xr/intern/wm_xr_actionmap.c
     xr/intern/wm_xr_draw.c
+    xr/intern/wm_xr_operators.c
     xr/intern/wm_xr_session.c
 
     xr/wm_xr.h

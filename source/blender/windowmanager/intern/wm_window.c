@@ -462,7 +462,7 @@ void wm_window_title(wmWindowManager *wm, wmWindow *win)
     /* Informs GHOST of unsaved changes, to set window modified visual indicator (macOS)
      * and to give hint of unsaved changes for a user warning mechanism in case of OS application
      * terminate request (e.g. OS Shortcut Alt+F4, Command+Q, (...), or session end). */
-    GHOST_SetWindowModifiedState(win->ghostwin, (bool)!wm->file_saved);
+    GHOST_SetWindowModifiedState(win->ghostwin, (GHOST_TUns8)!wm->file_saved);
   }
 }
 
@@ -1560,7 +1560,7 @@ void wm_window_process_events(const bContext *C)
 #ifdef WITH_XR_OPENXR
   /* XR events don't use the regular window queues. So here we don't only trigger
    * processing/dispatching but also handling. */
-  has_event |= wm_xr_events_handle(CTX_wm_manager(C));
+  has_event |= wm_xr_events_handle(C);
 #endif
 
   /* When there is no event, sleep 5 milliseconds not to use too much CPU when idle.
@@ -1722,7 +1722,7 @@ static char *wm_clipboard_text_get_ex(bool selection, int *r_len, bool firstline
     return NULL;
   }
 
-  char *buf = GHOST_getClipboard(selection);
+  char *buf = (char *)GHOST_getClipboard(selection);
   if (!buf) {
     *r_len = 0;
     return NULL;
@@ -1809,10 +1809,10 @@ void WM_clipboard_text_set(const char *buf, bool selection)
     }
     *p2 = '\0';
 
-    GHOST_putClipboard(newbuf, selection);
+    GHOST_putClipboard((GHOST_TInt8 *)newbuf, selection);
     MEM_freeN(newbuf);
 #else
-    GHOST_putClipboard(buf, selection);
+    GHOST_putClipboard((GHOST_TInt8 *)buf, selection);
 #endif
   }
 }
@@ -2403,10 +2403,6 @@ void wm_window_IME_begin(wmWindow *win, int x, int y, int w, int h, bool complet
 {
   BLI_assert(win);
 
-  /* Convert to native OS window coordinates. */
-  float fac = GHOST_GetNativePixelSize(win->ghostwin);
-  x /= fac;
-  y /= fac;
   GHOST_BeginIME(win->ghostwin, x, win->sizey - y, w, h, complete);
 }
 

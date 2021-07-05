@@ -68,10 +68,10 @@ class GHOST_WindowX11 : public GHOST_Window {
   GHOST_WindowX11(GHOST_SystemX11 *system,
                   Display *display,
                   const char *title,
-                  int32_t left,
-                  int32_t top,
-                  uint32_t width,
-                  uint32_t height,
+                  GHOST_TInt32 left,
+                  GHOST_TInt32 top,
+                  GHOST_TUns32 width,
+                  GHOST_TUns32 height,
                   GHOST_TWindowState state,
                   GHOST_WindowX11 *parentWindow,
                   GHOST_TDrawingContextType type = GHOST_kDrawingContextTypeNone,
@@ -93,15 +93,21 @@ class GHOST_WindowX11 : public GHOST_Window {
 
   bool isDialog() const;
 
-  GHOST_TSuccess setClientWidth(uint32_t width);
+  GHOST_TSuccess setClientWidth(GHOST_TUns32 width);
 
-  GHOST_TSuccess setClientHeight(uint32_t height);
+  GHOST_TSuccess setClientHeight(GHOST_TUns32 height);
 
-  GHOST_TSuccess setClientSize(uint32_t width, uint32_t height);
+  GHOST_TSuccess setClientSize(GHOST_TUns32 width, GHOST_TUns32 height);
 
-  void screenToClient(int32_t inX, int32_t inY, int32_t &outX, int32_t &outY) const;
+  void screenToClient(GHOST_TInt32 inX,
+                      GHOST_TInt32 inY,
+                      GHOST_TInt32 &outX,
+                      GHOST_TInt32 &outY) const;
 
-  void clientToScreen(int32_t inX, int32_t inY, int32_t &outX, int32_t &outY) const;
+  void clientToScreen(GHOST_TInt32 inX,
+                      GHOST_TInt32 inY,
+                      GHOST_TInt32 &outX,
+                      GHOST_TInt32 &outY) const;
 
   GHOST_TWindowState getState() const;
 
@@ -176,7 +182,7 @@ class GHOST_WindowX11 : public GHOST_Window {
 
   GHOST_TSuccess setDialogHints(GHOST_WindowX11 *parentWindow);
 
-  uint16_t getDPIHint();
+  GHOST_TUns16 getDPIHint();
 
  protected:
   /**
@@ -210,8 +216,8 @@ class GHOST_WindowX11 : public GHOST_Window {
    * Sets the cursor shape on the window using
    * native window system calls (Arbitrary size/color).
    */
-  GHOST_TSuccess setWindowCustomCursorShape(uint8_t *bitmap,
-                                            uint8_t *mask,
+  GHOST_TSuccess setWindowCustomCursorShape(GHOST_TUns8 *bitmap,
+                                            GHOST_TUns8 *mask,
                                             int sizex,
                                             int sizey,
                                             int hotX,

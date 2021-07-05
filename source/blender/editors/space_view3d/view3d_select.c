@@ -169,7 +169,7 @@ static bool object_deselect_all_visible(ViewLayer *view_layer, View3D *v3d)
 }
 
 /* deselect all except b */
-static bool object_deselect_all_except(ViewLayer *view_layer, Base *b)
+bool object_deselect_all_except(ViewLayer *view_layer, Base *b)
 {
   bool changed = false;
   LISTBASE_FOREACH (Base *, base, &view_layer->object_bases) {
@@ -2772,6 +2772,57 @@ static int view3d_select_invoke(bContext *C, wmOperator *op, const wmEvent *even
   return view3d_select_exec(C, op);
 }
 
+static int view3d_select_invoke_3d(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  BLI_assert(event->type == EVT_XR_ACTION);
+  BLI_assert(event->custom == EVT_DATA_XR);
+  BLI_assert(event->customdata);
+
+  const wmXrActionData *actiondata = event->customdata;
+  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  Scene *scene = CTX_data_scene(C);
+  View3D *v3d = CTX_wm_view3d(C);
+  ARegion *region = CTX_wm_region(C);
+  RegionView3D *rv3d = region->regiondata;
+  wmWindowManager *wm = CTX_wm_manager(C);
+  wmXrData *xr = &wm->xr;
+  float lens_prev;
+  float clip_start_prev, clip_end_prev;
+  float viewmat_prev[4][4];
+  int mval[2];
+  int retval;
+
+  /* Since this function is called in a window context, we need to replace the
+   * window view parameters with the XR surface counterparts to get a correct
+   * result for GPU select. */
+  ED_view3d_view_params_get(v3d, rv3d, &lens_prev, &clip_start_prev, &clip_end_prev, viewmat_prev);
+  ED_view3d_view_params_set(depsgraph,
+                            scene,
+                            v3d,
+                            region,
+                            actiondata->eye_lens,
+                            xr->session_settings.clip_start,
+                            xr->session_settings.clip_end,
+                            actiondata->eye_viewmat);
+
+  map_to_pixel(mval,
+               actiondata->controller_loc,
+               actiondata->eye_viewmat,
+               rv3d->winmat,
+               region->winx,
+               region->winy);
+
+  RNA_int_set_array(op->ptr, "location", mval);
+
+  retval = view3d_select_exec(C, op);
+
+  /* Restore window view. */
+  ED_view3d_view_params_set(
+      depsgraph, scene, v3d, region, lens_prev, clip_start_prev, clip_end_prev, viewmat_prev);
+
+  return retval;
+}
+
 void VIEW3D_OT_select(wmOperatorType *ot)
 {
   PropertyRNA *prop;
@@ -2783,6 +2834,7 @@ void VIEW3D_OT_select(wmOperatorType *ot)
 
   /* api callbacks */
   ot->invoke = view3d_select_invoke;
+  ot->invoke_3d = view3d_select_invoke_3d;
   ot->exec = view3d_select_exec;
   ot->poll = ED_operator_view3d_active;
 
@@ -3652,8 +3704,10 @@ void VIEW3D_OT_select_box(wmOperatorType *ot)
 
   /* api callbacks */
   ot->invoke = WM_gesture_box_invoke;
+  ot->invoke_3d = WM_gesture_box_invoke_3d;
   ot->exec = view3d_box_select_exec;
   ot->modal = WM_gesture_box_modal;
+  ot->modal_3d = WM_gesture_box_modal_3d;
   ot->poll = view3d_selectable_data;
   ot->cancel = WM_gesture_box_cancel;
 

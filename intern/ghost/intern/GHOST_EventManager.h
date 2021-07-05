@@ -53,14 +53,14 @@ class GHOST_EventManager {
    * Returns the number of events currently on the stack.
    * \return The number of events on the stack.
    */
-  uint32_t getNumEvents();
+  GHOST_TUns32 getNumEvents();
 
   /**
    * Returns the number of events of a certain type currently on the stack.
    * \param type: The type of events to be counted.
    * \return The number of events on the stack of this type.
    */
-  uint32_t getNumEvents(GHOST_TEventType type);
+  GHOST_TUns32 getNumEvents(GHOST_TEventType type);
 
   /**
    * Pushes an event on the stack.

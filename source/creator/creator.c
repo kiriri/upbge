@@ -528,6 +528,10 @@ int main(int argc,
   CTX_py_init_set(C, true);
   WM_keyconfig_init(C);
 
+#ifdef WITH_XR_OPENXR
+  WM_xr_actionconfig_init(C);
+#endif
+
 #ifdef WITH_FREESTYLE
   /* Initialize Freestyle. */
   FRS_init();

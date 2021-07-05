@@ -30,9 +30,11 @@ struct BezTriple;
 struct FCurve;
 struct ListBase;
 struct Object;
+struct Scene;
 struct TransData;
 struct TransDataCurveHandleFlags;
 struct TransInfo;
+struct ViewLayer;
 struct bContext;
 
 /* transform_convert.c */
@@ -191,6 +193,9 @@ void special_aftertrans_update__node(bContext *C, TransInfo *t);
 
 /* transform_convert_object.c */
 void createTransObject(bContext *C, TransInfo *t);
+void autokeyframe_object(
+    bContext *C, struct Scene *scene, struct ViewLayer *view_layer, Object *ob, int tmode);
+bool motionpath_need_update_object(Scene *scene, Object *ob);
 void recalcData_objects(TransInfo *t);
 void special_aftertrans_update__object(bContext *C, TransInfo *t);
 

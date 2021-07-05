@@ -109,15 +109,18 @@
 #pragma once
 
 struct ID;
+struct IDProperty;
 struct ImBuf;
 struct bContext;
 struct wmEvent;
 struct wmOperator;
+struct wmOperatorType;
 struct wmWindowManager;
 
 #include "BLI_compiler_attrs.h"
 #include "DNA_listBase.h"
 #include "DNA_vec_types.h"
+#include "DNA_xr_types.h"
 #include "RNA_types.h"
 
 /* exported types for WM */
@@ -705,6 +708,41 @@ typedef struct wmXrActionState {
 } wmXrActionState;
 #endif
 
+typedef struct wmXrActionData {
+  /** Action map name. */
+  char actionmap[64];
+  /** Action name. */
+  char action[64];
+  /** Type. */
+  eXrActionType type;
+  /** State. Set appropriately based on type. */
+  float state[2];
+  /** State of the other subaction path for bimanual actions. */
+  float state_other[2];
+
+  /** Input threshold for float/vector2f actions. */
+  float float_threshold;
+
+  /** Controller pose corresponding to the action's subaction path. */
+  float controller_loc[3];
+  float controller_rot[4];
+  /** Controller pose of the other subaction path for bimanual actions. */
+  float controller_loc_other[3];
+  float controller_rot_other[4];
+
+  /** Lens (focal length) of the selection eye. */
+  float eye_lens;
+  /** Viewmat of the selection eye. */
+  float eye_viewmat[4][4];
+
+  /** Operator. */
+  struct wmOperatorType *ot;
+  struct IDProperty *op_properties;
+
+  /** Whether bimanual interaction is occuring. */
+  bool bimanual;
+} wmXrActionData;
+
 /** Timer flags. */
 typedef enum {
   /** Do not attempt to free customdata pointer even if non-NULL. */
@@ -779,6 +817,14 @@ typedef struct wmOperatorType {
                 const struct wmEvent *) ATTR_WARN_UNUSED_RESULT;
 
   /**
+   * Same as invoke() but intended to be called from an XR session.
+   * The event type should be EVT_XR_ACTION and custom data type EVT_DATA_XR.
+   */
+  int (*invoke_3d)(struct bContext *,
+                   struct wmOperator *,
+                   const struct wmEvent *) ATTR_WARN_UNUSED_RESULT;
+
+  /**
    * Called when a modal operator is canceled (not used often).
    * Internal cleanup can be done here if needed.
    */
@@ -793,6 +839,14 @@ typedef struct wmOperatorType {
   int (*modal)(struct bContext *,
                struct wmOperator *,
                const struct wmEvent *) ATTR_WARN_UNUSED_RESULT;
+
+  /**
+   * Same as modal() but intended to be called from an XR session.
+   * The event type should be EVT_XR_ACTION and custom data type EVT_DATA_XR.
+   */
+  int (*modal_3d)(struct bContext *,
+                  struct wmOperator *,
+                  const struct wmEvent *) ATTR_WARN_UNUSED_RESULT;
 
   /**
    * Verify if the operator can be executed in the current context, note

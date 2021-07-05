@@ -117,7 +117,7 @@ static int tga_out4(unsigned int data, FILE *file)
   uchar *p;
 
   p = (uchar *)&data;
-  /* Order = BGRA. */
+  /* order = bgra */
   if (putc(p[2], file) == EOF) {
     return EOF;
   }

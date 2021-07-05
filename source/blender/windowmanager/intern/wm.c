@@ -106,6 +106,24 @@ static void window_manager_foreach_id(ID *id, LibraryForeachIDData *data)
 static void write_wm_xr_data(BlendWriter *writer, wmXrData *xr_data)
 {
   BKE_screen_view3d_shading_blend_write(writer, &xr_data->session_settings.shading);
+
+  LISTBASE_FOREACH (XrActionConfig *, ac, &xr_data->session_settings.actionconfigs) {
+    BLO_write_struct(writer, XrActionConfig, ac);
+
+    /* Only write actionmaps for user configs. */
+    if ((ac->flag & XR_ACTIONCONF_USER) != 0) {
+      LISTBASE_FOREACH (XrActionMap *, am, &ac->actionmaps) {
+        BLO_write_struct(writer, XrActionMap, am);
+
+        LISTBASE_FOREACH (XrActionMapItem *, ami, &am->items) {
+          BLO_write_struct(writer, XrActionMapItem, ami);
+          if (ami->op[0] && ami->op_properties) {
+            IDP_BlendWrite(writer, ami->op_properties);
+          }
+        }
+      }
+    }
+  }
 }
 
 static void window_manager_blend_write(BlendWriter *writer, ID *id, const void *id_address)
@@ -134,6 +152,35 @@ static void window_manager_blend_write(BlendWriter *writer, ID *id, const void *
 static void direct_link_wm_xr_data(BlendDataReader *reader, wmXrData *xr_data)
 {
   BKE_screen_view3d_shading_blend_read_data(reader, &xr_data->session_settings.shading);
+
+  BLO_read_list(reader, &xr_data->session_settings.actionconfigs);
+
+  LISTBASE_FOREACH (XrActionConfig *, ac, &xr_data->session_settings.actionconfigs) {
+    BLO_read_list(reader, &ac->actionmaps);
+
+    LISTBASE_FOREACH (XrActionMap *, am, &ac->actionmaps) {
+      BLO_read_list(reader, &am->items);
+
+      LISTBASE_FOREACH (XrActionMapItem *, ami, &am->items) {
+        if (ami->op[0] && ami->op_properties) {
+          BLO_read_data_address(reader, &ami->op_properties);
+          IDP_BlendDataRead(reader, &ami->op_properties);
+
+          ami->op_properties_ptr = MEM_callocN(sizeof(PointerRNA), "wmOpItemPtr");
+          WM_operator_properties_create(ami->op_properties_ptr, ami->op);
+          ami->op_properties_ptr->data = ami->op_properties;
+        }
+        else {
+          ami->op_properties = NULL;
+          ami->op_properties_ptr = NULL;
+        }
+      }
+    }
+  }
+
+  BLO_read_data_address(reader, &xr_data->session_settings.defaultconf);
+  BLO_read_data_address(reader, &xr_data->session_settings.addonconf);
+  BLO_read_data_address(reader, &xr_data->session_settings.userconf);
 }
 
 static void window_manager_blend_read_data(BlendDataReader *reader, ID *id)
@@ -168,7 +215,7 @@ static void window_manager_blend_read_data(BlendDataReader *reader, ID *id)
     win->eventstate = NULL;
     win->cursor_keymap_status = NULL;
     win->tweak = NULL;
-#if defined(WIN32) || defined(__APPLE__)
+#ifdef WIN32
     win->ime_data = NULL;
 #endif
 
@@ -227,6 +274,9 @@ static void window_manager_blend_read_data(BlendDataReader *reader, ID *id)
 static void lib_link_wm_xr_data(BlendLibReader *reader, ID *parent_id, wmXrData *xr_data)
 {
   BLO_read_id_address(reader, parent_id->lib, &xr_data->session_settings.base_pose_object);
+  BLO_read_id_address(reader, parent_id->lib, &xr_data->session_settings.headset_object);
+  BLO_read_id_address(reader, parent_id->lib, &xr_data->session_settings.controller0_object);
+  BLO_read_id_address(reader, parent_id->lib, &xr_data->session_settings.controller1_object);
 }
 
 static void lib_link_workspace_instance_hook(BlendLibReader *reader,
@@ -434,6 +484,47 @@ void WM_operator_handlers_clear(wmWindowManager *wm, wmOperatorType *ot)
   }
 }
 
+void WM_xr_actionmap_item_properties_free(XrActionMapItem *ami)
+{
+  if (ami->op_properties_ptr) {
+    WM_operator_properties_free(ami->op_properties_ptr);
+    MEM_freeN(ami->op_properties_ptr);
+    ami->op_properties_ptr = NULL;
+    ami->op_properties = NULL;
+  }
+  else {
+    BLI_assert(ami->op_properties == NULL);
+  }
+}
+
+void WM_xr_actionmap_clear(XrActionMap *actionmap)
+{
+  LISTBASE_FOREACH (XrActionMapItem *, ami, &actionmap->items) {
+    WM_xr_actionmap_item_properties_free(ami);
+  }
+
+  BLI_freelistN(&actionmap->items);
+
+  actionmap->selitem = 0;
+}
+
+void WM_xr_actionconfig_clear(XrActionConfig *actionconf)
+{
+  LISTBASE_FOREACH (XrActionMap *, am, &actionconf->actionmaps) {
+    WM_xr_actionmap_clear(am);
+  }
+
+  BLI_freelistN(&actionconf->actionmaps);
+
+  actionconf->selactionmap = actionconf->actactionmap = 0;
+}
+
+void WM_xr_actionconfig_free(XrActionConfig *actionconf)
+{
+  WM_xr_actionconfig_clear(actionconf);
+  MEM_freeN(actionconf);
+}
+
 /* ****************************************** */
 
 void WM_keyconfig_reload(bContext *C)
@@ -508,6 +599,9 @@ void WM_check(bContext *C)
     /* Case: fileread. */
     if ((wm->initialized & WM_WINDOW_IS_INIT) == 0) {
       WM_keyconfig_init(C);
+#ifdef WITH_XR_OPENXR
+      WM_xr_actionconfig_init(C);
+#endif
       WM_autosave_init(wm);
     }
 
@@ -594,6 +688,11 @@ void wm_close_and_free(bContext *C, wmWindowManager *wm)
   wmKeyConfig *keyconf;
   while ((keyconf = BLI_pophead(&wm->keyconfigs))) {
     WM_keyconfig_free(keyconf);
+  }
+
+  XrActionConfig *actionconf;
+  while ((actionconf = BLI_pophead(&wm->xr.session_settings.actionconfigs))) {
+    WM_xr_actionconfig_free(actionconf);
   }
 
   BLI_freelistN(&wm->notifier_queue);

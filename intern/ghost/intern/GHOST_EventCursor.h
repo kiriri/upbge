@@ -39,11 +39,11 @@ class GHOST_EventCursor : public GHOST_Event {
    * \param y: The y-coordinate of the location the cursor was at the time of the event.
    * \param tablet: The tablet data associated with this event.
    */
-  GHOST_EventCursor(uint64_t msec,
+  GHOST_EventCursor(GHOST_TUns64 msec,
                     GHOST_TEventType type,
                     GHOST_IWindow *window,
-                    int32_t x,
-                    int32_t y,
+                    GHOST_TInt32 x,
+                    GHOST_TInt32 y,
                     const GHOST_TabletData &tablet)
       : GHOST_Event(msec, type, window), m_cursorEventData({x, y, tablet})
   {

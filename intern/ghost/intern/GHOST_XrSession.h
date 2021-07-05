@@ -81,14 +81,19 @@ class GHOST_XrSession {
   bool syncActions(const char *action_set_name = nullptr);
   bool applyHapticAction(const char *action_set_name,
                          const char *action_name,
-                         const int64_t &duration,
+                         const char **subaction_path,
+                         const GHOST_TInt64 &duration,
                          const float &frequency,
                          const float &amplitude);
-  void stopHapticAction(const char *action_set_name, const char *action_name);
+  void stopHapticAction(const char *action_set_name,
+                        const char *action_name,
+                        const char **subaction_path);
 
-  /* Custom data (owned by Blender, not GHOST) accessors. */
+  /** Custom data (owned by Blender, not GHOST) accessors. */
   void *getActionSetCustomdata(const char *action_set_name);
   void *getActionCustomdata(const char *action_set_name, const char *action_name);
+  uint32_t getActionCount(const char *action_set_name);
+  void getActionCustomdatas(const char *action_set_name, void **r_customdatas);
 
  private:
   /** Pointer back to context managing this session. Would be nice to avoid, but needed to access
@@ -117,6 +122,7 @@ class GHOST_XrSession {
                 XrCompositionLayerProjectionView &r_proj_layer_view,
                 XrSpaceLocation &view_location,
                 XrView &view,
+                uint32_t view_idx,
                 void *draw_customdata);
   void beginFrameDrawing();
   void endFrameDrawing(std::vector<XrCompositionLayerBaseHeader *> &layers);

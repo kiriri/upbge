@@ -31,7 +31,7 @@
 
 #  include "BLI_sort.h"
 
-#  ifdef min /* For MSVC. */
+#  ifdef min /* for msvc */
 #    undef min
 #  endif
 

@@ -2059,15 +2059,13 @@ static int file_smoothscroll_invoke(bContext *C, wmOperator *UNUSED(op), const w
     }
   }
 
-  wmWindowManager *wm = CTX_wm_manager(C);
-  wmWindow *win = CTX_wm_window(C);
-
   /* if we are not editing, we are done */
   if (edit_idx == -1) {
     /* Do not invalidate timer if filerename is still pending,
      * we might still be building the filelist and yet have to find edited entry. */
     if (params->rename_flag == 0) {
-      file_params_smoothscroll_timer_clear(wm, win, sfile);
+      WM_event_remove_timer(CTX_wm_manager(C), CTX_wm_window(C), sfile->smoothscroll_timer);
+      sfile->smoothscroll_timer = NULL;
     }
     return OPERATOR_PASS_THROUGH;
   }
@@ -2075,7 +2073,8 @@ static int file_smoothscroll_invoke(bContext *C, wmOperator *UNUSED(op), const w
   /* we need the correct area for scrolling */
   region = BKE_area_find_region_type(area, RGN_TYPE_WINDOW);
   if (!region || region->regiontype != RGN_TYPE_WINDOW) {
-    file_params_smoothscroll_timer_clear(wm, win, sfile);
+    WM_event_remove_timer(CTX_wm_manager(C), CTX_wm_window(C), sfile->smoothscroll_timer);
+    sfile->smoothscroll_timer = NULL;
     return OPERATOR_PASS_THROUGH;
   }
 
@@ -2132,11 +2131,13 @@ static int file_smoothscroll_invoke(bContext *C, wmOperator *UNUSED(op), const w
                             (max_middle_offset - middle_offset < items_block_size));
 
   if (is_ready && (is_centered || is_full_start || is_full_end)) {
-    file_params_smoothscroll_timer_clear(wm, win, sfile);
+    WM_event_remove_timer(CTX_wm_manager(C), CTX_wm_window(C), sfile->smoothscroll_timer);
+    sfile->smoothscroll_timer = NULL;
     /* Post-scroll (after rename has been validated by user) is done,
      * rename process is totally finished, cleanup. */
     if ((params->rename_flag & FILE_PARAMS_RENAME_POSTSCROLL_ACTIVE) != 0) {
-      file_params_renamefile_clear(params);
+      params->renamefile[0] = '\0';
+      params->rename_flag = 0;
     }
     return OPERATOR_FINISHED;
   }
@@ -2345,16 +2346,18 @@ static int file_directory_new_exec(bContext *C, wmOperator *op)
     return OPERATOR_CANCELLED;
   }
 
-  eFileSel_Params_RenameFlag rename_flag = params->rename_flag;
-
   /* If we don't enter the directory directly, remember file to jump into editing. */
   if (do_diropen == false) {
     BLI_strncpy(params->renamefile, name, FILE_MAXFILE);
-    rename_flag = FILE_PARAMS_RENAME_PENDING;
+    params->rename_flag = FILE_PARAMS_RENAME_PENDING;
   }
 
-  file_params_invoke_rename_postscroll(wm, CTX_wm_window(C), sfile);
-  params->rename_flag = rename_flag;
+  /* Set timer to smoothly view newly generated file. */
+  if (sfile->smoothscroll_timer != NULL) {
+    WM_event_remove_timer(wm, CTX_wm_window(C), sfile->smoothscroll_timer);
+  }
+  sfile->smoothscroll_timer = WM_event_add_timer(wm, CTX_wm_window(C), TIMER1, 1.0 / 1000.0);
+  sfile->scroll_offset = 0;
 
   /* reload dir to make sure we're seeing what's in the directory */
   ED_fileselect_clear(wm, sfile);
@@ -2801,11 +2804,6 @@ static int file_rename_exec(bContext *C, wmOperator *UNUSED(op))
   return OPERATOR_FINISHED;
 }
 
-static bool file_rename_poll(bContext *C)
-{
-  return ED_operator_file_active(C) && !ED_fileselect_is_asset_browser(CTX_wm_space_file(C));
-}
-
 void FILE_OT_rename(struct wmOperatorType *ot)
 {
   /* identifiers */
@@ -2816,7 +2814,7 @@ void FILE_OT_rename(struct wmOperatorType *ot)
   /* api callbacks */
   ot->invoke = file_rename_invoke;
   ot->exec = file_rename_exec;
-  ot->poll = file_rename_poll;
+  ot->poll = ED_operator_file_active;
 }
 
 /** \} */

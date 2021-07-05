@@ -169,21 +169,21 @@ GHOST_SystemWin32::~GHOST_SystemWin32()
   toggleConsole(1);
 }
 
-uint64_t GHOST_SystemWin32::performanceCounterToMillis(__int64 perf_ticks) const
+GHOST_TUns64 GHOST_SystemWin32::performanceCounterToMillis(__int64 perf_ticks) const
 {
   // Calculate the time passed since system initialization.
   __int64 delta = (perf_ticks - m_start) * 1000;
 
-  uint64_t t = (uint64_t)(delta / m_freq);
+  GHOST_TUns64 t = (GHOST_TUns64)(delta / m_freq);
   return t;
 }
 
-uint64_t GHOST_SystemWin32::tickCountToMillis(__int64 ticks) const
+GHOST_TUns64 GHOST_SystemWin32::tickCountToMillis(__int64 ticks) const
 {
   return ticks - m_lfstart;
 }
 
-uint64_t GHOST_SystemWin32::getMilliSeconds() const
+GHOST_TUns64 GHOST_SystemWin32::getMilliSeconds() const
 {
   // Hardware does not support high resolution timers. We will use GetTickCount instead then.
   if (!m_hasPerformanceCounter) {
@@ -197,31 +197,31 @@ uint64_t GHOST_SystemWin32::getMilliSeconds() const
   return performanceCounterToMillis(count);
 }
 
-uint8_t GHOST_SystemWin32::getNumDisplays() const
+GHOST_TUns8 GHOST_SystemWin32::getNumDisplays() const
 {
   GHOST_ASSERT(m_displayManager, "GHOST_SystemWin32::getNumDisplays(): m_displayManager==0\n");
-  uint8_t numDisplays;
+  GHOST_TUns8 numDisplays;
   m_displayManager->getNumDisplays(numDisplays);
   return numDisplays;
 }
 
-void GHOST_SystemWin32::getMainDisplayDimensions(uint32_t &width, uint32_t &height) const
+void GHOST_SystemWin32::getMainDisplayDimensions(GHOST_TUns32 &width, GHOST_TUns32 &height) const
 {
   width = ::GetSystemMetrics(SM_CXSCREEN);
   height = ::GetSystemMetrics(SM_CYSCREEN);
 }
 
-void GHOST_SystemWin32::getAllDisplayDimensions(uint32_t &width, uint32_t &height) const
+void GHOST_SystemWin32::getAllDisplayDimensions(GHOST_TUns32 &width, GHOST_TUns32 &height) const
 {
   width = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
   height = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
 }
 
 GHOST_IWindow *GHOST_SystemWin32::createWindow(const char *title,
-                                               int32_t left,
-                                               int32_t top,
-                                               uint32_t width,
-                                               uint32_t height,
+                                               GHOST_TInt32 left,
+                                               GHOST_TInt32 top,
+                                               GHOST_TUns32 width,
+                                               GHOST_TUns32 height,
                                                GHOST_TWindowState state,
                                                GHOST_TDrawingContextType type,
                                                GHOST_GLSettings glSettings,
@@ -410,8 +410,8 @@ bool GHOST_SystemWin32::processEvents(bool waitForEvent)
 #if 1
       ::Sleep(1);
 #else
-      uint64_t next = timerMgr->nextFireTime();
-      int64_t maxSleep = next - getMilliSeconds();
+      GHOST_TUns64 next = timerMgr->nextFireTime();
+      GHOST_TInt64 maxSleep = next - getMilliSeconds();
 
       if (next == GHOST_kFireTimeNever) {
         ::WaitMessage();
@@ -448,7 +448,7 @@ bool GHOST_SystemWin32::processEvents(bool waitForEvent)
   return hasEventHandled;
 }
 
-GHOST_TSuccess GHOST_SystemWin32::getCursorPosition(int32_t &x, int32_t &y) const
+GHOST_TSuccess GHOST_SystemWin32::getCursorPosition(GHOST_TInt32 &x, GHOST_TInt32 &y) const
 {
   POINT point;
   if (::GetCursorPos(&point)) {
@@ -459,7 +459,7 @@ GHOST_TSuccess GHOST_SystemWin32::getCursorPosition(int32_t &x, int32_t &y) cons
   return GHOST_kFailure;
 }
 
-GHOST_TSuccess GHOST_SystemWin32::setCursorPosition(int32_t x, int32_t y)
+GHOST_TSuccess GHOST_SystemWin32::setCursorPosition(GHOST_TInt32 x, GHOST_TInt32 y)
 {
   if (!::GetActiveWindow())
     return GHOST_kFailure;
@@ -1029,7 +1029,7 @@ void GHOST_SystemWin32::processPointerEvent(
     case WM_POINTERUPDATE:
       /* Coalesced pointer events are reverse chronological order, reorder chronologically.
        * Only contiguous move events are coalesced. */
-      for (uint32_t i = pointerInfo.size(); i-- > 0;) {
+      for (GHOST_TUns32 i = pointerInfo.size(); i-- > 0;) {
         system->pushEvent(new GHOST_EventCursor(pointerInfo[i].time,
                                                 GHOST_kEventCursorMove,
                                                 window,
@@ -1079,7 +1079,7 @@ void GHOST_SystemWin32::processPointerEvent(
 
 GHOST_EventCursor *GHOST_SystemWin32::processCursorEvent(GHOST_WindowWin32 *window)
 {
-  int32_t x_screen, y_screen;
+  GHOST_TInt32 x_screen, y_screen;
   GHOST_SystemWin32 *system = (GHOST_SystemWin32 *)getSystem();
 
   if (window->getTabletData().Active != GHOST_kTabletModeNone) {
@@ -1090,9 +1090,9 @@ GHOST_EventCursor *GHOST_SystemWin32::processCursorEvent(GHOST_WindowWin32 *wind
   system->getCursorPosition(x_screen, y_screen);
 
   if (window->getCursorGrabModeIsWarp()) {
-    int32_t x_new = x_screen;
-    int32_t y_new = y_screen;
-    int32_t x_accum, y_accum;
+    GHOST_TInt32 x_new = x_screen;
+    GHOST_TInt32 y_new = y_screen;
+    GHOST_TInt32 x_accum, y_accum;
     GHOST_Rect bounds;
 
     /* Fallback to window bounds. */
@@ -1322,7 +1322,7 @@ void GHOST_SystemWin32::processMinMaxInfo(MINMAXINFO *minmax)
 bool GHOST_SystemWin32::processNDOF(RAWINPUT const &raw)
 {
   bool eventSent = false;
-  uint64_t now = getMilliSeconds();
+  GHOST_TUns64 now = getMilliSeconds();
 
   static bool firstEvent = true;
   if (firstEvent) {  // determine exactly which device is plugged in
@@ -1627,7 +1627,7 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
           processPointerEvent(msg, window, wParam, lParam, eventHandled);
           break;
         case WM_POINTERLEAVE: {
-          uint32_t pointerId = GET_POINTERID_WPARAM(wParam);
+          GHOST_TUns32 pointerId = GET_POINTERID_WPARAM(wParam);
           POINTER_INFO pointerInfo;
           if (!GetPointerInfo(pointerId, &pointerInfo)) {
             break;
@@ -2002,7 +2002,7 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
   return lResult;
 }
 
-char *GHOST_SystemWin32::getClipboard(bool selection) const
+GHOST_TUns8 *GHOST_SystemWin32::getClipboard(bool selection) const
 {
   char *temp_buff;
 
@@ -2026,7 +2026,7 @@ char *GHOST_SystemWin32::getClipboard(bool selection) const
     GlobalUnlock(hData);
     CloseClipboard();
 
-    return temp_buff;
+    return (GHOST_TUns8 *)temp_buff;
   }
   else if (IsClipboardFormatAvailable(CF_TEXT) && OpenClipboard(NULL)) {
     char *buffer;
@@ -2052,14 +2052,14 @@ char *GHOST_SystemWin32::getClipboard(bool selection) const
     GlobalUnlock(hData);
     CloseClipboard();
 
-    return temp_buff;
+    return (GHOST_TUns8 *)temp_buff;
   }
   else {
     return NULL;
   }
 }
 
-void GHOST_SystemWin32::putClipboard(char *buffer, bool selection) const
+void GHOST_SystemWin32::putClipboard(GHOST_TInt8 *buffer, bool selection) const
 {
   if (selection) {
     return;

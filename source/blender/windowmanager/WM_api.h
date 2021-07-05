@@ -639,7 +639,13 @@ void WM_paneltype_remove(struct PanelType *pt);
 
 /* wm_gesture_ops.c */
 int WM_gesture_box_invoke(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
+int WM_gesture_box_invoke_3d(struct bContext *C,
+                             struct wmOperator *op,
+                             const struct wmEvent *event);
 int WM_gesture_box_modal(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
+int WM_gesture_box_modal_3d(struct bContext *C,
+                            struct wmOperator *op,
+                            const struct wmEvent *event);
 void WM_gesture_box_cancel(struct bContext *C, struct wmOperator *op);
 int WM_gesture_circle_invoke(struct bContext *C,
                              struct wmOperator *op,
@@ -901,6 +907,22 @@ bool WM_event_is_tablet(const struct wmEvent *event);
 int WM_event_absolute_delta_x(const struct wmEvent *event);
 int WM_event_absolute_delta_y(const struct wmEvent *event);
 
+void WM_event_xr_data(const struct wmEvent *event,
+                      char **actionmap,
+                      char **action,
+                      char *type,
+                      float state[2],
+                      float state_other[2],
+                      float *float_threshold,
+                      float controller_loc[3],
+                      float controller_rot[4],
+                      float controller_loc_other[3],
+                      float controller_rot_other[4],
+                      float *eye_lens,
+                      float eye_viewmat[4][4],
+                      bool *bimanual);
+bool WM_event_is_xr(const struct wmEvent *event);
+
 #ifdef WITH_INPUT_IME
 bool WM_event_is_ime_switch(const struct wmEvent *event);
 #endif
@@ -951,14 +973,34 @@ void WM_xr_session_base_pose_reset(wmXrData *xr);
 bool WM_xr_session_state_viewer_pose_location_get(const wmXrData *xr, float r_location[3]);
 bool WM_xr_session_state_viewer_pose_rotation_get(const wmXrData *xr, float r_rotation[4]);
 bool WM_xr_session_state_viewer_pose_matrix_info_get(const wmXrData *xr,
+                                                     bool from_selection_eye,
                                                      float r_viewmat[4][4],
-                                                     float *r_focal_len);
+                                                     float *r_focal_len,
+                                                     float *r_clip_start,
+                                                     float *r_clip_end);
 bool WM_xr_session_state_controller_pose_location_get(const wmXrData *xr,
                                                       unsigned int subaction_idx,
                                                       float r_location[3]);
 bool WM_xr_session_state_controller_pose_rotation_get(const wmXrData *xr,
                                                       unsigned int subaction_idx,
                                                       float r_rotation[4]);
+bool WM_xr_session_state_nav_location_get(const wmXrData *xr, float r_location[3]);
+void WM_xr_session_state_nav_location_set(wmXrData *xr, const float location[3]);
+bool WM_xr_session_state_nav_rotation_get(const wmXrData *xr, float r_rotation[4]);
+void WM_xr_session_state_nav_rotation_set(wmXrData *xr, const float rotation[4]);
+bool WM_xr_session_state_nav_scale_get(const wmXrData *xr, float *r_scale);
+void WM_xr_session_state_nav_scale_set(wmXrData *xr, float scale);
+void WM_xr_session_state_navigation_reset(struct wmXrSessionState *state);
+void WM_xr_session_state_viewer_object_get(const wmXrData *xr, Object *ob);
+void WM_xr_session_state_viewer_object_set(wmXrData *xr, const Object *ob);
+void WM_xr_session_state_controller_object_get(const wmXrData *xr,
+                                               unsigned int subaction_idx,
+                                               Object *ob);
+void WM_xr_session_state_controller_object_set(wmXrData *xr,
+                                               unsigned int subaction_idx,
+                                               const Object *ob);
+
+struct ARegionType *WM_xr_surface_controller_region_type_get(void);
 
 /* wm_xr_actions.c */
 /* XR action functions to be called pre-XR session start.
@@ -974,7 +1016,11 @@ bool WM_xr_action_create(wmXrData *xr,
                          const float *float_threshold,
                          struct wmOperatorType *ot,
                          struct IDProperty *op_properties,
-                         eXrOpFlag op_flag);
+                         const char **haptic_name,
+                         const long long *haptic_duration,
+                         const float *haptic_frequency,
+                         const float *haptic_amplitude,
+                         eXrActionFlag flag);
 void WM_xr_action_destroy(wmXrData *xr, const char *action_set_name, const char *action_name);
 bool WM_xr_action_space_create(wmXrData *xr,
                                const char *action_set_name,
@@ -1016,17 +1062,56 @@ bool WM_xr_action_state_get(const wmXrData *xr,
 bool WM_xr_haptic_action_apply(wmXrData *xr,
                                const char *action_set_name,
                                const char *action_name,
+                               const char **subaction_path,
                                const long long *duration,
                                const float *frequency,
                                const float *amplitude);
-void WM_xr_haptic_action_stop(wmXrData *xr, const char *action_set_name, const char *action_name);
+void WM_xr_haptic_action_stop(wmXrData *xr,
+                              const char *action_set_name,
+                              const char *action_name,
+                              const char **subaction_path);
+
+/* wm_xr_actionmap.c */
+void WM_xr_actionconfig_init(struct bContext *C);
+void WM_xr_actionconfig_update_tag(XrActionMap *actionmap, XrActionMapItem *ami);
+void WM_xr_actionconfig_update(XrSessionSettings *settings);
+
+XrActionConfig *WM_xr_actionconfig_new(XrSessionSettings *settings,
+                                       const char *idname,
+                                       bool user_defined);
+bool WM_xr_actionconfig_remove(XrSessionSettings *settings, XrActionConfig *actionconf);
+XrActionConfig *WM_xr_actionconfig_active_get(XrSessionSettings *settings);
+void WM_xr_actionconfig_active_set(XrSessionSettings *settings, const char *idname);
+
+XrActionMap *WM_xr_actionmap_new(XrActionConfig *actionconf,
+                                 const char *idname,
+                                 bool replace_existing);
+void WM_xr_actionmap_ensure_unique(XrActionConfig *actionconf, XrActionMap *actionmap);
+XrActionMap *WM_xr_actionmap_add_copy(XrActionConfig *actionconf, XrActionMap *am_src);
+bool WM_xr_actionmap_remove(XrActionConfig *actionconf, XrActionMap *actionmap);
+XrActionMap *WM_xr_actionmap_list_find(ListBase *lb, const char *idname);
+
+XrActionMapItem *WM_xr_actionmap_item_new(XrActionMap *actionmap,
+                                          const char *idname,
+                                          bool replace_existing);
+void WM_xr_actionmap_item_ensure_unique(XrActionMap *actionmap, XrActionMapItem *ami);
+XrActionMapItem *WM_xr_actionmap_item_add_copy(XrActionMap *actionmap, XrActionMapItem *ami_src);
+bool WM_xr_actionmap_item_remove(XrActionMap *actionmap, XrActionMapItem *ami);
+XrActionMapItem *WM_xr_actionmap_item_list_find(ListBase *lb, const char *idname);
+void WM_xr_actionmap_item_properties_update_ot(XrActionMapItem *ami);
 #endif /* WITH_XR_OPENXR */
+
+/* wm.c */
+/* These need to be accessible even when WITH_XR_OPENXR is not defined since actionmaps can be
+ * stored in files. */
+void WM_xr_actionconfig_free(XrActionConfig *actionconf);
+void WM_xr_actionconfig_clear(XrActionConfig *actionconf);
+void WM_xr_actionmap_clear(XrActionMap *actionmap);
+void WM_xr_actionmap_item_properties_free(XrActionMapItem *ami);
 
 /* Game engine transition */
 void WM_init_opengl_blenderplayer(struct Main *bmain, void *ghost_system, struct wmWindow *win);
 void *WM_opengl_context_create_blenderplayer(void *ghost_system);
-/* End of Game engine transition */
-
-#ifdef __cplusplus
+/* End of Game engine transition */#ifdef __cplusplus
 }
 #endif

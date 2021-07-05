@@ -120,7 +120,7 @@ static void create_reference_spaces(OpenXRSessionData &oxr, const GHOST_XrPose &
   XrReferenceSpaceCreateInfo create_info = {XR_TYPE_REFERENCE_SPACE_CREATE_INFO};
   create_info.poseInReferenceSpace.orientation.w = 1.0f;
 
-  create_info.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
+  create_info.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_STAGE;
 #if 0
 /* TODO
  *
@@ -144,8 +144,47 @@ static void create_reference_spaces(OpenXRSessionData &oxr, const GHOST_XrPose &
   (void)base_pose;
 #endif
 
-  CHECK_XR(xrCreateReferenceSpace(oxr.session, &create_info, &oxr.reference_space),
-           "Failed to create reference space.");
+  XrResult result = xrCreateReferenceSpace(oxr.session, &create_info, &oxr.reference_space);
+
+  if (XR_FAILED(result)) {
+    /* One of the rare cases where we don't want to immediately throw an exception on failure,
+       since runtimes are not required to support the stage reference space. Although we need the
+       stage reference space for absolute tracking, if the runtime doesn't support it then just
+       fallback to the local space. */
+    if (result == XR_ERROR_REFERENCE_SPACE_UNSUPPORTED) {
+      printf(
+          "Warning: XR runtime does not support stage reference space, disabling absolute "
+          "tracking.\n");
+
+      create_info.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
+      CHECK_XR(xrCreateReferenceSpace(oxr.session, &create_info, &oxr.reference_space),
+               "Failed to create local reference space.");
+    }
+    else {
+      throw GHOST_XrException("Failed to create stage reference space.", result);
+    }
+  }
+  else {
+    /* Check if tracking bounds are valid. Tracking bounds may be invalid if the user did not
+     * define a tracking space via the XR runtime. */
+    XrExtent2Df extents;
+    CHECK_XR(xrGetReferenceSpaceBoundsRect(oxr.session, XR_REFERENCE_SPACE_TYPE_STAGE, &extents),
+             "Failed to get stage reference space bounds.");
+    if (extents.width == 0.0f || extents.height == 0.0f) {
+      printf(
+          "Warning: Invalid stage reference space bounds, disabling absolute tracking. To enable "
+          "absolute tracking, please define a tracking space via the XR runtime.\n");
+
+      /* Fallback to local space. */
+      if (oxr.reference_space != XR_NULL_HANDLE) {
+        CHECK_XR(xrDestroySpace(oxr.reference_space), "Failed to destroy stage reference space.");
+      }
+
+      create_info.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
+      CHECK_XR(xrCreateReferenceSpace(oxr.session, &create_info, &oxr.reference_space),
+               "Failed to create local reference space.");
+    }
+  }
 
   create_info.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;
   CHECK_XR(xrCreateReferenceSpace(oxr.session, &create_info, &oxr.view_space),
@@ -370,6 +409,7 @@ void GHOST_XrSession::drawView(GHOST_XrSwapchain &swapchain,
                                XrCompositionLayerProjectionView &r_proj_layer_view,
                                XrSpaceLocation &view_location,
                                XrView &view,
+                               uint32_t view_idx,
                                void *draw_customdata)
 {
   XrSwapchainImageBaseHeader *swapchain_image = swapchain.acquireDrawableSwapchainImage();
@@ -380,6 +420,7 @@ void GHOST_XrSession::drawView(GHOST_XrSwapchain &swapchain,
   r_proj_layer_view.fov = view.fov;
   swapchain.updateCompositionLayerProjectViewSubImage(r_proj_layer_view.subImage);
 
+  draw_view_info.view_idx = (char)view_idx;
   draw_view_info.expects_srgb_buffer = swapchain.isBufferSRGB();
   draw_view_info.ofsx = r_proj_layer_view.subImage.imageRect.offset.x;
   draw_view_info.ofsy = r_proj_layer_view.subImage.imageRect.offset.y;
@@ -429,6 +470,7 @@ XrCompositionLayerProjection GHOST_XrSession::drawLayer(
              r_proj_layer_views[view_idx],
              view_location,
              m_oxr->views[view_idx],
+             view_idx,
              draw_customdata);
   }
 
@@ -507,6 +549,7 @@ static GHOST_XrActionSet *find_action_set(OpenXRSessionData *oxr, const char *ac
   if (it == oxr->action_sets.end()) {
     return nullptr;
   }
+
   return &it->second;
 }
 
@@ -772,7 +815,8 @@ bool GHOST_XrSession::syncActions(const char *action_set_name)
 
 bool GHOST_XrSession::applyHapticAction(const char *action_set_name,
                                         const char *action_name,
-                                        const int64_t &duration,
+                                        const char **subaction_path,
+                                        const GHOST_TInt64 &duration,
                                         const float &frequency,
                                         const float &amplitude)
 {
@@ -786,12 +830,15 @@ bool GHOST_XrSession::applyHapticAction(const char *action_set_name,
     return false;
   }
 
-  action->applyHapticFeedback(m_oxr->session, action_name, duration, frequency, amplitude);
+  action->applyHapticFeedback(
+      m_oxr->session, action_name, subaction_path, duration, frequency, amplitude);
 
   return true;
 }
 
-void GHOST_XrSession::stopHapticAction(const char *action_set_name, const char *action_name)
+void GHOST_XrSession::stopHapticAction(const char *action_set_name,
+                                       const char *action_name,
+                                       const char **subaction_path)
 {
   GHOST_XrActionSet *action_set = find_action_set(m_oxr.get(), action_set_name);
   if (action_set == nullptr) {
@@ -803,7 +850,7 @@ void GHOST_XrSession::stopHapticAction(const char *action_set_name, const char *
     return;
   }
 
-  action->stopHapticFeedback(m_oxr->session, action_name);
+  action->stopHapticFeedback(m_oxr->session, action_name, subaction_path);
 }
 
 void *GHOST_XrSession::getActionSetCustomdata(const char *action_set_name)
@@ -829,6 +876,26 @@ void *GHOST_XrSession::getActionCustomdata(const char *action_set_name, const ch
   }
 
   return action->getCustomdata();
+}
+
+uint32_t GHOST_XrSession::getActionCount(const char *action_set_name)
+{
+  GHOST_XrActionSet *action_set = find_action_set(m_oxr.get(), action_set_name);
+  if (action_set == nullptr) {
+    return 0;
+  }
+
+  return action_set->getActionCount();
+}
+
+void GHOST_XrSession::getActionCustomdatas(const char *action_set_name, void **r_customdatas)
+{
+  GHOST_XrActionSet *action_set = find_action_set(m_oxr.get(), action_set_name);
+  if (action_set == nullptr) {
+    return;
+  }
+
+  action_set->getActionCustomdatas(r_customdatas);
 }
 
 /** \} */ /* Actions */

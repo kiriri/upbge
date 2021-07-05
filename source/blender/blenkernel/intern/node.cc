@@ -3151,8 +3151,8 @@ void ntreeSetOutput(bNodeTree *ntree)
           if (ntree->type == NTREE_COMPOSIT) {
             /* same type, exception for viewer */
             if (tnode->type == node->type ||
-                (ELEM(tnode->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER, GEO_NODE_VIEWER) &&
-                 ELEM(node->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER, GEO_NODE_VIEWER))) {
+                (ELEM(tnode->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER) &&
+                 ELEM(node->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER))) {
               if (tnode->flag & NODE_DO_OUTPUT) {
                 output++;
                 if (output > 1) {
@@ -5059,7 +5059,6 @@ static void registerGeometryNodes()
   register_node_type_geo_curve_length();
   register_node_type_geo_curve_primitive_bezier_segment();
   register_node_type_geo_curve_primitive_circle();
-  register_node_type_geo_curve_primitive_line();
   register_node_type_geo_curve_primitive_quadratic_bezier();
   register_node_type_geo_curve_primitive_spiral();
   register_node_type_geo_curve_primitive_star();
@@ -5101,7 +5100,6 @@ static void registerGeometryNodes()
   register_node_type_geo_switch();
   register_node_type_geo_transform();
   register_node_type_geo_triangulate();
-  register_node_type_geo_viewer();
   register_node_type_geo_volume_to_mesh();
 }
 
@@ -5109,7 +5107,6 @@ static void registerFunctionNodes()
 {
   register_node_type_fn_boolean_math();
   register_node_type_fn_float_compare();
-  register_node_type_fn_float_to_int();
   register_node_type_fn_input_string();
   register_node_type_fn_input_vector();
   register_node_type_fn_random_float();

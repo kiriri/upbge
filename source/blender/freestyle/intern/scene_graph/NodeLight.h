@@ -95,7 +95,7 @@ class NodeLight : public Node {
    *    Initially, 0.
    */
   static int numberOfLights;
-  /** The current light number */
+  /** The current lignt number */
   int _number;
 };
 

@@ -181,7 +181,7 @@ OperationNode *ComponentNode::add_operation(const DepsEvalOperationCb &op,
     OperationIDKey key(opcode, name, name_tag);
     operations_map->add(key, op_node);
 
-    /* Set back-link. */
+    /* set backlink */
     op_node->owner = this;
   }
   else {

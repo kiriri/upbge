@@ -170,7 +170,7 @@ enum {
   TD_BEZTRIPLE = 1 << 8,
   /** when this is set, don't apply translation changes to this element */
   TD_NO_LOC = 1 << 9,
-  /** For Graph Editor auto-snap, indicates that point should not undergo auto-snapping. */
+  /** For Graph Editor autosnap, indicates that point should not undergo autosnapping */
   TD_NOTIMESNAP = 1 << 10,
   /** For Graph Editor - curves that can only have int-values
    * need their keyframes tagged with this. */

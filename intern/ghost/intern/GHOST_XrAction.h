@@ -19,7 +19,7 @@
  */
 
 /* Note: Requires OpenXR headers to be included before this one for OpenXR types (XrSpace, XrPath,
- * etc.). */
+ * etc). */
 
 #pragma once
 
@@ -65,7 +65,7 @@ class GHOST_XrActionProfile {
 
  private:
   XrPath m_profile = XR_NULL_PATH;
-  /* Bindings identified by interaction (user (subaction) + component) path. */
+  /** Bindings identified by interaction (user (subaction) + component) path. */
   std::map<std::string, XrPath> m_bindings;
 };
 
@@ -91,10 +91,11 @@ class GHOST_XrAction {
                    const XrTime &predicted_display_time);
   void applyHapticFeedback(XrSession session,
                            const char *action_name,
-                           const int64_t &duration,
+                           const char **subaction_path,
+                           const GHOST_TInt64 &duration,
                            const float &frequency,
                            const float &amplitude);
-  void stopHapticFeedback(XrSession session, const char *action_name);
+  void stopHapticFeedback(XrSession session, const char *action_name, const char **subaction_path);
 
   void *getCustomdata();
   void getBindings(std::map<XrPath, std::vector<XrActionSuggestedBinding>> &r_bindings) const;
@@ -102,15 +103,16 @@ class GHOST_XrAction {
  private:
   XrAction m_action = XR_NULL_HANDLE;
   GHOST_XrActionType m_type;
+  std::map<std::string, uint32_t> m_subaction_indices;
   std::vector<XrPath> m_subaction_paths;
   /** States for each subaction path. */
   void *m_states;
 
   std::unique_ptr<GHOST_C_CustomDataWrapper> m_custom_data_ = nullptr; /* wmXrAction */
 
-  /* Spaces identified by user (subaction) path. */
+  /** Spaces identified by user (subaction) path. */
   std::map<std::string, GHOST_XrActionSpace> m_spaces;
-  /* Profiles identified by interaction profile path. */
+  /** Profiles identified by interaction profile path. */
   std::map<std::string, GHOST_XrActionProfile> m_profiles;
 };
 
@@ -132,6 +134,8 @@ class GHOST_XrActionSet {
 
   XrActionSet getActionSet() const;
   void *getCustomdata();
+  uint32_t getActionCount() const;
+  void getActionCustomdatas(void **r_customdatas);
   void getBindings(std::map<XrPath, std::vector<XrActionSuggestedBinding>> &r_bindings) const;
 
  private:

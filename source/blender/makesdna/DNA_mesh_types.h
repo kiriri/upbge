@@ -164,7 +164,7 @@ typedef struct Mesh {
   struct MVert *mvert;
   /** Array of edges. */
   struct MEdge *medge;
-  /** Deform-group vertices. */
+  /** Deformgroup vertices. */
   struct MDeformVert *dvert;
 
   /* array of colors for the tessellated faces, must be number of tessellated

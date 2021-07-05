@@ -1576,7 +1576,7 @@ static uint free_localcollection_bit(Main *bmain, ushort local_collections_uuid,
 
   ushort local_view_bits = 0;
 
-  /* Check all areas: which local-views are in use? */
+  /* Check all areas: which localviews are in use? */
   for (screen = bmain->screens.first; screen; screen = screen->id.next) {
     for (area = screen->areabase.first; area; area = area->next) {
       SpaceLink *sl = area->spacedata.first;
@@ -1704,6 +1704,44 @@ void ED_view3d_local_collections_reset(struct bContext *C, const bool reset_all)
 /** \name XR Functionality
  * \{ */
 
+/* Used for invoke_3d/modal_3d (XR) operators. */
+void ED_view3d_view_params_get(const struct View3D *v3d,
+                               const struct RegionView3D *rv3d,
+                               float *r_lens,
+                               float *r_clip_start,
+                               float *r_clip_end,
+                               float r_viewmat[4][4])
+{
+  *r_lens = v3d->lens;
+  *r_clip_start = v3d->clip_start;
+  *r_clip_end = v3d->clip_end;
+
+  if (r_viewmat) {
+    copy_m4_m4(r_viewmat, rv3d->viewmat);
+  }
+}
+
+void ED_view3d_view_params_set(struct Depsgraph *depsgraph,
+                               struct Scene *scene,
+                               struct View3D *v3d,
+                               struct ARegion *region,
+                               const float lens,
+                               const float clip_start,
+                               const float clip_end,
+                               const float viewmat[4][4])
+{
+  v3d->lens = lens;
+  v3d->clip_start = clip_start;
+  v3d->clip_end = clip_end;
+
+  if (viewmat) {
+    ED_view3d_update_viewmat(depsgraph, scene, v3d, region, viewmat, NULL, NULL, false);
+  }
+  else {
+    view3d_winmatrix_set(depsgraph, region, v3d, NULL);
+  }
+}
+
 #ifdef WITH_XR_OPENXR
 
 static void view3d_xr_mirror_begin(RegionView3D *rv3d)
@@ -1741,8 +1779,6 @@ void ED_view3d_xr_shading_update(wmWindowManager *wm, const View3D *v3d, const S
 {
   if (v3d->runtime.flag & V3D_RUNTIME_XR_SESSION_ROOT) {
     View3DShading *xr_shading = &wm->xr.session_settings.shading;
-    /* Flags that shouldn't be overridden by the 3D View shading. */
-    const int flag_copy = V3D_SHADING_WORLD_ORIENTATION;
 
     BLI_assert(WM_xr_session_exists(&wm->xr));
 
@@ -1760,9 +1796,7 @@ void ED_view3d_xr_shading_update(wmWindowManager *wm, const View3D *v3d, const S
     }
 
     /* Copy shading from View3D to VR view. */
-    const int old_xr_shading_flag = xr_shading->flag;
     *xr_shading = v3d->shading;
-    xr_shading->flag = (xr_shading->flag & ~flag_copy) | (old_xr_shading_flag & flag_copy);
     if (v3d->shading.prop) {
       xr_shading->prop = IDP_CopyProperty(xr_shading->prop);
     }

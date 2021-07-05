@@ -36,7 +36,7 @@ GHOST_SystemPathsCocoa::~GHOST_SystemPathsCocoa()
 
 #pragma mark Base directories retrieval
 
-const char *GHOST_SystemPathsCocoa::getSystemDir(int, const char *versionstr) const
+const GHOST_TUns8 *GHOST_SystemPathsCocoa::getSystemDir(int, const char *versionstr) const
 {
   static char tempPath[512] = "";
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -60,10 +60,10 @@ const char *GHOST_SystemPathsCocoa::getSystemDir(int, const char *versionstr) co
            versionstr);
 
   [pool drain];
-  return tempPath;
+  return (GHOST_TUns8 *)tempPath;
 }
 
-const char *GHOST_SystemPathsCocoa::getUserDir(int, const char *versionstr) const
+const GHOST_TUns8 *GHOST_SystemPathsCocoa::getUserDir(int, const char *versionstr) const
 {
   static char tempPath[512] = "";
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -87,10 +87,10 @@ const char *GHOST_SystemPathsCocoa::getUserDir(int, const char *versionstr) cons
            versionstr);
 
   [pool drain];
-  return tempPath;
+  return (GHOST_TUns8 *)tempPath;
 }
 
-const char *GHOST_SystemPathsCocoa::getUserSpecialDir(GHOST_TUserSpecialDirTypes type) const
+const GHOST_TUns8 *GHOST_SystemPathsCocoa::getUserSpecialDir(GHOST_TUserSpecialDirTypes type) const
 {
   static char tempPath[512] = "";
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -138,12 +138,12 @@ const char *GHOST_SystemPathsCocoa::getUserSpecialDir(GHOST_TUserSpecialDirTypes
       (char *)tempPath, [basePath cStringUsingEncoding:NSASCIIStringEncoding], sizeof(tempPath));
 
   [pool drain];
-  return tempPath;
+  return (GHOST_TUns8 *)tempPath;
 }
 
-const char *GHOST_SystemPathsCocoa::getBinaryDir() const
+const GHOST_TUns8 *GHOST_SystemPathsCocoa::getBinaryDir() const
 {
-  static char tempPath[512] = "";
+  static GHOST_TUns8 tempPath[512] = "";
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSString *basePath;
 

@@ -52,33 +52,33 @@ class GHOST_SystemNULL : public GHOST_System {
   {
     return GHOST_kSuccess;
   }
-  char *getClipboard(bool selection) const
+  GHOST_TUns8 *getClipboard(bool selection) const
   {
     return NULL;
   }
-  void putClipboard(char *buffer, bool selection) const
+  void putClipboard(GHOST_TInt8 *buffer, bool selection) const
   { /* nop */
   }
-  uint64_t getMilliSeconds() const
+  GHOST_TUns64 getMilliSeconds() const
   {
     return 0;
   }
-  uint8_t getNumDisplays() const
+  GHOST_TUns8 getNumDisplays() const
   {
-    return uint8_t(1);
+    return GHOST_TUns8(1);
   }
-  GHOST_TSuccess getCursorPosition(int32_t &x, int32_t &y) const
-  {
-    return GHOST_kFailure;
-  }
-  GHOST_TSuccess setCursorPosition(int32_t x, int32_t y)
+  GHOST_TSuccess getCursorPosition(GHOST_TInt32 &x, GHOST_TInt32 &y) const
   {
     return GHOST_kFailure;
   }
-  void getMainDisplayDimensions(uint32_t &width, uint32_t &height) const
+  GHOST_TSuccess setCursorPosition(GHOST_TInt32 x, GHOST_TInt32 y)
+  {
+    return GHOST_kFailure;
+  }
+  void getMainDisplayDimensions(GHOST_TUns32 &width, GHOST_TUns32 &height) const
   { /* nop */
   }
-  void getAllDisplayDimensions(uint32_t &width, uint32_t &height) const
+  void getAllDisplayDimensions(GHOST_TUns32 &width, GHOST_TUns32 &height) const
   { /* nop */
   }
   GHOST_IContext *createOffscreenContext(GHOST_GLSettings glSettings)
@@ -106,10 +106,10 @@ class GHOST_SystemNULL : public GHOST_System {
   }
 
   GHOST_IWindow *createWindow(const char *title,
-                              int32_t left,
-                              int32_t top,
-                              uint32_t width,
-                              uint32_t height,
+                              GHOST_TInt32 left,
+                              GHOST_TInt32 top,
+                              GHOST_TUns32 width,
+                              GHOST_TUns32 height,
                               GHOST_TWindowState state,
                               GHOST_TDrawingContextType type,
                               GHOST_GLSettings glSettings,
