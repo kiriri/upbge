@@ -20,6 +20,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct wmWindowManager;
 struct wmXrData;
 struct bContext;
@@ -34,3 +38,7 @@ bool wm_xr_events_handle(const struct bContext *C);
 
 /* wm_xr_operators.c */
 void wm_xr_operatortypes_register(void);
+
+#ifdef __cplusplus
+}
+#endif

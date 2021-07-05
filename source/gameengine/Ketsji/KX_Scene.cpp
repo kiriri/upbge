@@ -57,6 +57,7 @@
 #include "GPU_viewport.h"
 #include "WM_api.h"
 #include "wm_draw.h"
+#include "xr/wm_xr.h"
 
 #include "BL_BlenderConverter.h"
 #include "BL_BlenderDataConversion.h"
@@ -766,6 +767,15 @@ void KX_Scene::RenderAfterCameraSetup(KX_Camera *cam,
       }
 
       CTX_wm_view3d(C)->camera = cam->GetBlenderObject();
+
+#ifdef WITH_XR_OPENXR
+      wmWindowManager *wm = CTX_wm_manager(C);
+      if (WM_xr_session_exists(&wm->xr)) {
+        if (WM_xr_session_is_ready(&wm->xr)) {
+          wm_xr_events_handle(C);
+        }
+      }
+#endif
 
       ED_region_tag_redraw(CTX_wm_region(C));
       wm_draw_update(C);

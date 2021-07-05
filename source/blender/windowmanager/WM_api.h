@@ -1112,6 +1112,8 @@ void WM_xr_actionmap_item_properties_free(XrActionMapItem *ami);
 /* Game engine transition */
 void WM_init_opengl_blenderplayer(struct Main *bmain, void *ghost_system, struct wmWindow *win);
 void *WM_opengl_context_create_blenderplayer(void *ghost_system);
-/* End of Game engine transition */#ifdef __cplusplus
+/* End of Game engine transition */
+
+#ifdef __cplusplus
 }
 #endif
