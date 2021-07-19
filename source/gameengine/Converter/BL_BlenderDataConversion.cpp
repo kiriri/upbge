@@ -1633,7 +1633,7 @@ void BL_ConvertBlenderObjects(struct Main *maggie,
         continue;
       }
     }
-    if (gameobj->GetComponents()) {
+    if (gameobj->GetPrototype() || gameobj->GetComponents()) {
       // Register object for component update.
       kxscene->GetPythonComponentManager().RegisterObject(gameobj);
     }
