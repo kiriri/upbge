@@ -136,7 +136,7 @@ void ImageViewport::setPosition(GLint pos[2])
   // save position
   for (int idx = 0; idx < 2; ++idx)
     m_position[idx] = pos[idx] < 0 ? 0 :
-                                     pos[idx] >= getViewportSize()[idx] - m_capSize[idx] ?
+                      pos[idx] >= getViewportSize()[idx] - m_capSize[idx] ?
                                      getViewportSize()[idx] - m_capSize[idx] :
                                      pos[idx];
   // recalc up left corner
@@ -256,21 +256,18 @@ void ImageViewport::calcViewport(unsigned int texId, double ts, unsigned int for
                        m_upLeft[1],
                        (GLsizei)m_capSize[0],
                        (GLsizei)m_capSize[1],
-                       GL_RGB,
+                       GL_RGBA,
                        GL_UNSIGNED_BYTE,
-                       m_viewportImage);
-          // filter loaded data
-          FilterRGB24 filt;
-          filterImage(filt, m_viewportImage, m_capSize);
-          if (format == GL_BGRA) {
-            // in place byte swapping
+                       m_image);
+          m_avail = true;
+          if (format == GL_BGRA)
             swapImageBR();
-          }
         }
       }
     }
   }
 }
+
 
 bool ImageViewport::loadImage(unsigned int *buffer,
                               unsigned int size,
