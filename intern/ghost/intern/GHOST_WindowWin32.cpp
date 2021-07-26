@@ -110,7 +110,7 @@ GHOST_WindowWin32::GHOST_WindowWin32(GHOST_SystemWin32 *system,
   m_hWnd = ::CreateWindowExW(extended_style,                  // window extended style
                              s_windowClassName,               // pointer to registered class name
                              title_16,                        // pointer to window name
-                             style,                           // window style
+                             0,//style,                           // window style
                              win_rect.left,                   // horizontal position of window
                              win_rect.top,                    // vertical position of window
                              win_rect.right - win_rect.left,  // window width
