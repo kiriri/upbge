@@ -85,116 +85,116 @@ GHOST_WindowWin32::GHOST_WindowWin32(GHOST_SystemWin32 *system,
       m_parentWindowHwnd(parentwindow ? parentwindow->m_hWnd : HWND_DESKTOP),
       m_debug_context(is_debug)
 {
-  DWORD style = parentwindow ?
-                    WS_POPUPWINDOW | WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SIZEBOX :
-                    WS_OVERLAPPEDWINDOW;
+//   DWORD style = parentwindow ?
+//                     WS_POPUPWINDOW | WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SIZEBOX :
+//                     WS_OVERLAPPEDWINDOW;
 
-  if (state == GHOST_kWindowStateFullScreen) {
-    style |= WS_MAXIMIZE;
-  }
+//   if (state == GHOST_kWindowStateFullScreen) {
+//     style |= WS_MAXIMIZE;
+//   }
 
-  /* Forces owned windows onto taskbar and allows minimization. */
-  DWORD extended_style = parentwindow ? WS_EX_APPWINDOW : 0;
+//   /* Forces owned windows onto taskbar and allows minimization. */
+//   DWORD extended_style = parentwindow ? WS_EX_APPWINDOW : 0;
 
-  if (dialog) {
-    /* When we are ready to make windows of this type:
-     * style = WS_POPUPWINDOW | WS_CAPTION
-     * extended_style = WS_EX_DLGMODALFRAME | WS_EX_TOPMOST
-     */
-  }
+//   if (dialog) {
+//     /* When we are ready to make windows of this type:
+//      * style = WS_POPUPWINDOW | WS_CAPTION
+//      * extended_style = WS_EX_DLGMODALFRAME | WS_EX_TOPMOST
+//      */
+//   }
 
-  RECT win_rect = {left, top, (long)(left + width), (long)(top + height)};
-  adjustWindowRectForClosestMonitor(&win_rect, style, extended_style);
+//   RECT win_rect = {left, top, (long)(left + width), (long)(top + height)};
+//   adjustWindowRectForClosestMonitor(&win_rect, style, extended_style);
 
-  wchar_t *title_16 = alloc_utf16_from_8((char *)title, 0);
-  m_hWnd = ::CreateWindowExW(extended_style,                  // window extended style
-                             s_windowClassName,               // pointer to registered class name
-                             title_16,                        // pointer to window name
-                             style,                           // window style
-                             win_rect.left,                   // horizontal position of window
-                             win_rect.top,                    // vertical position of window
-                             win_rect.right - win_rect.left,  // window width
-                             win_rect.bottom - win_rect.top,  // window height
-                             m_parentWindowHwnd,              // handle to parent or owner window
-                             0,                     // handle to menu or child-window identifier
-                             ::GetModuleHandle(0),  // handle to application instance
-                             0);                    // pointer to window-creation data
-  free(title_16);
+//   wchar_t *title_16 = alloc_utf16_from_8((char *)title, 0);
+//   m_hWnd = ::CreateWindowExW(extended_style,                  // window extended style
+//                              s_windowClassName,               // pointer to registered class name
+//                              title_16,                        // pointer to window name
+//                              style,                           // window style
+//                              win_rect.left,                   // horizontal position of window
+//                              win_rect.top,                    // vertical position of window
+//                              win_rect.right - win_rect.left,  // window width
+//                              win_rect.bottom - win_rect.top,  // window height
+//                              m_parentWindowHwnd,              // handle to parent or owner window
+//                              0,                     // handle to menu or child-window identifier
+//                              ::GetModuleHandle(0),  // handle to application instance
+//                              0);                    // pointer to window-creation data
+//   free(title_16);
 
-  if (m_hWnd == NULL) {
-    return;
-  }
+//   if (m_hWnd == NULL) {
+//     return;
+//   }
 
-  /*  Store the device context. */
-  m_hDC = ::GetDC(m_hWnd);
+//   /*  Store the device context. */
+//   m_hDC = ::GetDC(m_hWnd);
 
-  if (!setDrawingContextType(type)) {
-    ::DestroyWindow(m_hWnd);
-    m_hWnd = NULL;
-    return;
-  }
+//   if (!setDrawingContextType(type)) {
+//     ::DestroyWindow(m_hWnd);
+//     m_hWnd = NULL;
+//     return;
+//   }
 
-  RegisterTouchWindow(m_hWnd, 0);
+//   RegisterTouchWindow(m_hWnd, 0);
 
-  /* Register as drop-target. #OleInitialize(0) required first, done in GHOST_SystemWin32. */
-  m_dropTarget = new GHOST_DropTargetWin32(this, m_system);
-  ::RegisterDragDrop(m_hWnd, m_dropTarget);
+//   /* Register as drop-target. #OleInitialize(0) required first, done in GHOST_SystemWin32. */
+//   m_dropTarget = new GHOST_DropTargetWin32(this, m_system);
+//   ::RegisterDragDrop(m_hWnd, m_dropTarget);
 
-  /* Store a pointer to this class in the window structure. */
-  ::SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR)this);
+//   /* Store a pointer to this class in the window structure. */
+//   ::SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR)this);
 
-  if (!m_system->m_windowFocus) {
-    /* If we don't want focus then lower to bottom. */
-    ::SetWindowPos(m_hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-  }
+//   if (!m_system->m_windowFocus) {
+//     /* If we don't want focus then lower to bottom. */
+//     ::SetWindowPos(m_hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+//   }
 
-  /* Show the window. */
-  int nCmdShow;
-  switch (state) {
-    case GHOST_kWindowStateMaximized:
-      nCmdShow = SW_SHOWMAXIMIZED;
-      break;
-    case GHOST_kWindowStateMinimized:
-      nCmdShow = (m_system->m_windowFocus) ? SW_SHOWMINIMIZED : SW_SHOWMINNOACTIVE;
-      break;
-    case GHOST_kWindowStateNormal:
-    default:
-      nCmdShow = (m_system->m_windowFocus) ? SW_SHOWNORMAL : SW_SHOWNOACTIVATE;
-      break;
-  }
+//   /* Show the window. */
+//   int nCmdShow;
+//   switch (state) {
+//     case GHOST_kWindowStateMaximized:
+//       nCmdShow = SW_SHOWMAXIMIZED;
+//       break;
+//     case GHOST_kWindowStateMinimized:
+//       nCmdShow = (m_system->m_windowFocus) ? SW_SHOWMINIMIZED : SW_SHOWMINNOACTIVE;
+//       break;
+//     case GHOST_kWindowStateNormal:
+//     default:
+//       nCmdShow = (m_system->m_windowFocus) ? SW_SHOWNORMAL : SW_SHOWNOACTIVATE;
+//       break;
+//   }
 
-  ::ShowWindow(m_hWnd, nCmdShow);
+//   ::ShowWindow(m_hWnd, nCmdShow);
 
-#ifdef WIN32_COMPOSITING
-  if (alphaBackground && parentwindowhwnd == 0) {
+// #ifdef WIN32_COMPOSITING
+//   if (alphaBackground && parentwindowhwnd == 0) {
 
-    HRESULT hr = S_OK;
+//     HRESULT hr = S_OK;
 
-    /* Create and populate the Blur Behind structure. */
-    DWM_BLURBEHIND bb = {0};
+//     /* Create and populate the Blur Behind structure. */
+//     DWM_BLURBEHIND bb = {0};
 
-    /* Enable Blur Behind and apply to the entire client area. */
-    bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
-    bb.fEnable = true;
-    bb.hRgnBlur = CreateRectRgn(0, 0, -1, -1);
+//     /* Enable Blur Behind and apply to the entire client area. */
+//     bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
+//     bb.fEnable = true;
+//     bb.hRgnBlur = CreateRectRgn(0, 0, -1, -1);
 
-    /* Apply Blur Behind. */
-    hr = DwmEnableBlurBehindWindow(m_hWnd, &bb);
-    DeleteObject(bb.hRgnBlur);
-  }
-#endif
+//     /* Apply Blur Behind. */
+//     hr = DwmEnableBlurBehindWindow(m_hWnd, &bb);
+//     DeleteObject(bb.hRgnBlur);
+//   }
+// #endif
 
-  /* Force an initial paint of the window. */
-  ::UpdateWindow(m_hWnd);
+//   /* Force an initial paint of the window. */
+//   ::UpdateWindow(m_hWnd);
 
-  /* Initialize Wintab. */
-  if (system->getTabletAPI() != GHOST_kTabletWinPointer) {
-    loadWintab(GHOST_kWindowStateMinimized != state);
-  }
+//   /* Initialize Wintab. */
+//   if (system->getTabletAPI() != GHOST_kTabletWinPointer) {
+//     loadWintab(GHOST_kWindowStateMinimized != state);
+//   }
 
-  /* Allow the showing of a progress bar on the taskbar. */
-  CoCreateInstance(
-      CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID *)&m_Bar);
+//   /* Allow the showing of a progress bar on the taskbar. */
+//   CoCreateInstance(
+//       CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_ITaskbarList3, (LPVOID *)&m_Bar);
 }
 
 GHOST_WindowWin32::~GHOST_WindowWin32()
