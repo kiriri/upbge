@@ -50,7 +50,7 @@ GHOST_WindowSDL::GHOST_WindowSDL(GHOST_SystemSDL *system,
                                top,
                                width,
                                height,
-                               SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+                               SDL_WINDOW_OPENGL);
 
   /* now set up the rendering context. */
   if (setDrawingContextType(type) == GHOST_kSuccess) {
