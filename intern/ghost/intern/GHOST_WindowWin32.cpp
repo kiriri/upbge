@@ -163,7 +163,7 @@ GHOST_WindowWin32::GHOST_WindowWin32(GHOST_SystemWin32 *system,
       break;
   }
 
-  ::ShowWindow(m_hWnd, nCmdShow);
+  //::ShowWindow(m_hWnd, nCmdShow);
 
 #ifdef WIN32_COMPOSITING
   if (alphaBackground && parentwindowhwnd == 0) {

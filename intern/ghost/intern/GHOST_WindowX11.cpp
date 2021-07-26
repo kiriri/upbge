@@ -476,7 +476,7 @@ GHOST_WindowX11::GHOST_WindowX11(GHOST_SystemX11 *system,
     XMapRaised(m_display, m_window);
   }
   else {
-    XMapWindow(m_display, m_window);
+    //XMapWindow(m_display, m_window);
 
     if (!system->m_windowFocus) {
       XLowerWindow(m_display, m_window);
