@@ -44,25 +44,25 @@ GHOST_WindowSDL::GHOST_WindowSDL(GHOST_SystemSDL *system,
       m_sdl_custom_cursor(NULL)
 {
 
-//   /* creating the window _must_ come after setting attributes */
-//   m_sdl_win = SDL_CreateWindow(title,
-//                                left,
-//                                top,
-//                                width,
-//                                height,
-//                                SDL_WINDOW_OPENGL);
+  /* creating the window _must_ come after setting attributes */
+  m_sdl_win = SDL_CreateWindow(title,
+                               left,
+                               top,
+                               width,
+                               height,
+                               SDL_WINDOW_OPENGL);
 
-//   /* now set up the rendering context. */
-//   if (setDrawingContextType(type) == GHOST_kSuccess) {
-//     m_valid_setup = true;
-//     GHOST_PRINT("Created window\n");
-//   }
+  /* now set up the rendering context. */
+  if (setDrawingContextType(type) == GHOST_kSuccess) {
+    m_valid_setup = true;
+    GHOST_PRINT("Created window\n");
+  }
 
-//   if (exclusive) {
-//     SDL_RaiseWindow(m_sdl_win);
-//   }
+  if (exclusive) {
+    SDL_RaiseWindow(m_sdl_win);
+  }
 
-//   setTitle(title);
+  setTitle(title);
 }
 
 GHOST_WindowSDL::~GHOST_WindowSDL()
