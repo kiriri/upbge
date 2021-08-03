@@ -344,7 +344,7 @@ typedef struct Object {
   /** Deprecated, use 'matbits'. */
   short colbits DNA_DEPRECATED;
 
-  /** Transformation settings and transform locks . */
+  /** Transformation settings and transform locks. */
   short transflag, protectflag;
   short trackflag, upflag;
   /** Used for DopeSheet filtering settings (expanded/collapsed). */
@@ -495,6 +495,8 @@ typedef struct Object {
   unsigned int state;
   /** bit masks of initial state as recorded by the users */
   unsigned int init_state;
+
+  struct PythonProxy *custom_object;
 
   ListBase prop;        /* game logic property list (not to be confused with IDProperties) */
   ListBase sensors;     /* game logic sensors */

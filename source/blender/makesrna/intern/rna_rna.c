@@ -458,29 +458,6 @@ int rna_builtin_properties_lookup_string(PointerRNA *ptr, const char *key, Point
       }
     }
   } while ((srna = srna->base));
-
-  /* this was used pre 2.5beta0, now ID property access uses python's
-   * getitem style access
-   * - ob["foo"] rather than ob.foo */
-#  if 0
-  if (ptr->data) {
-    IDProperty *group, *idp;
-
-    group = RNA_struct_idprops(ptr, 0);
-
-    if (group) {
-      for (idp = group->data.group.first; idp; idp = idp->next) {
-        if (STREQ(idp->name, key)) {
-          propptr.type = &RNA_Property;
-          propptr.data = idp;
-
-          *r_ptr = propptr;
-          return true;
-        }
-      }
-    }
-  }
-#  endif
   return false;
 }
 
@@ -2123,7 +2100,7 @@ bool rna_property_override_store_default(Main *UNUSED(bmain),
                 for (int j = len_local; j--;) {
                   array_b[j] = j >= i ? -array_b[j] : fac * (array_a[j] - array_b[j]);
                   if (array_b[j] < prop_min || array_b[j] > prop_max) {
-                    /* We failed to  find a suitable diff op,
+                    /* We failed to find a suitable diff op,
                      * fall back to plain REPLACE one. */
                     opop->operation = IDOVERRIDE_LIBRARY_OP_REPLACE;
                     do_set = false;
@@ -2213,7 +2190,7 @@ bool rna_property_override_store_default(Main *UNUSED(bmain),
                 for (int j = len_local; j--;) {
                   array_b[j] = j >= i ? -array_b[j] : fac * (array_a[j] - array_b[j]);
                   if (array_b[j] < prop_min || array_b[j] > prop_max) {
-                    /* We failed to  find a suitable diff op,
+                    /* We failed to find a suitable diff op,
                      * fall back to plain REPLACE one. */
                     opop->operation = IDOVERRIDE_LIBRARY_OP_REPLACE;
                     do_set = false;

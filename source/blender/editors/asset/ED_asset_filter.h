@@ -12,25 +12,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- *
- * The Original Code is Copyright (C) 2015 Blender Foundation.
- * All rights reserved.
  */
 
-#include "openvdb_util.h"
+/** \file
+ * \ingroup edasset
+ */
 
-#include <cstdio>
+#pragma once
 
-ScopeTimer::ScopeTimer(const std::string &message) : m_message(message), m_timer()
-{
-}
-
-ScopeTimer::~ScopeTimer()
-{
-#if OPENVDB_LIBRARY_MAJOR_VERSION_NUMBER >= 7
-  double delta = m_timer.milliseconds();
-#else
-  double delta = m_timer.delta(); /* Deprecated in OpenVDB 7. */
+#ifdef __cplusplus
+extern "C" {
 #endif
-  std::printf("%s: %fms\n", m_message.c_str(), delta);
+
+struct AssetHandle;
+struct AssetFilterSettings;
+
+bool ED_asset_filter_matches_asset(const struct AssetFilterSettings *filter,
+                                   const struct AssetHandle *asset);
+
+#ifdef __cplusplus
 }
+#endif

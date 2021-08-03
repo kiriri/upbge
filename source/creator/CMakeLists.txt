@@ -51,6 +51,11 @@ if(WITH_TBB)
   list(INSERT LIB 0 bf_blenkernel)
 endif()
 
+# Compatibility with Windows 7
+if(WIN32 AND WITH_WINDOWS_7)
+  list(INSERT LIB 0 ${BCOMPAT7_LIBRARIES})
+endif()
+
 if(WIN32)
   blender_include_dirs(../../intern/utfconv)
 endif()
@@ -993,6 +998,16 @@ elseif(WIN32)
     )
   endif()
 
+  # Compatibility with Windows 7
+  if(WITH_WINDOWS_7)
+    install(
+      FILES ${LIBDIR}/bcompat7/bin/bcompat7.dll
+            ${LIBDIR}/bcompat7/bin/api-ms-win-core-path-l1-1-0.dll
+      DESTINATION "."
+      CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel;Debug
+    )
+  endif()
+
 elseif(APPLE)
   if(NOT WITH_PYTHON_MODULE)
     # Uppercase name for app bundle
@@ -1089,13 +1104,6 @@ elseif(APPLE)
         COMMAND xcrun install_name_tool -add_rpath "@loader_path/../Resources/${BLENDER_VERSION}/lib" "$<TARGET_FILE:blender>"
       )
     endif()
-  endif()
-
-  if(WITH_LLVM AND NOT LLVM_STATIC)
-    install(
-      FILES ${LIBDIR}/llvm/lib/libLLVM-3.4.dylib
-      DESTINATION Blender.app/Contents/MacOS
-    )
   endif()
 
   # python

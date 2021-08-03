@@ -360,7 +360,7 @@ static const EnumPropertyItem display_channels_items[] = {
      "Color and Alpha",
      "Display image with RGB colors and alpha transparency"},
     {0, "COLOR", ICON_IMAGE_RGB, "Color", "Display image with RGB colors"},
-    {SI_SHOW_ALPHA, "ALPHA", ICON_IMAGE_ALPHA, "Alpha", "Display  alpha transparency channel"},
+    {SI_SHOW_ALPHA, "ALPHA", ICON_IMAGE_ALPHA, "Alpha", "Display alpha transparency channel"},
     {SI_SHOW_ZBUF,
      "Z_BUFFER",
      ICON_IMAGE_ZDEPTH,
@@ -780,6 +780,19 @@ static void rna_Space_show_region_toolbar_set(PointerRNA *ptr, bool value)
 static void rna_Space_show_region_toolbar_update(bContext *C, PointerRNA *ptr)
 {
   rna_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_TOOLS, RGN_FLAG_HIDDEN);
+}
+
+static bool rna_Space_show_region_tool_props_get(PointerRNA *ptr)
+{
+  return !rna_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_TOOL_PROPS, RGN_FLAG_HIDDEN);
+}
+static void rna_Space_show_region_tool_props_set(PointerRNA *ptr, bool value)
+{
+  rna_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_TOOL_PROPS, RGN_FLAG_HIDDEN, !value);
+}
+static void rna_Space_show_region_tool_props_update(bContext *C, PointerRNA *ptr)
+{
+  rna_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_TOOL_PROPS, RGN_FLAG_HIDDEN);
 }
 
 /* Channels Region. */
@@ -3200,6 +3213,10 @@ static void rna_def_space_generic_show_region_toggles(StructRNA *srna, int regio
     region_type_mask &= ~(1 << RGN_TYPE_TOOLS);
     DEF_SHOW_REGION_PROPERTY(show_region_toolbar, "Toolbar", "");
   }
+  if (region_type_mask & (1 << RGN_TYPE_TOOL_PROPS)) {
+    region_type_mask &= ~(1 << RGN_TYPE_TOOL_PROPS);
+    DEF_SHOW_REGION_PROPERTY(show_region_tool_props, "Toolbar", "");
+  }
   if (region_type_mask & (1 << RGN_TYPE_CHANNELS)) {
     region_type_mask &= ~(1 << RGN_TYPE_CHANNELS);
     DEF_SHOW_REGION_PROPERTY(show_region_channels, "Channels", "");
@@ -5523,6 +5540,11 @@ static void rna_def_space_sequencer(BlenderRNA *brna)
   RNA_def_property_boolean_sdna(prop, NULL, "draw_flag", SEQ_DRAW_TRANSFORM_PREVIEW);
   RNA_def_property_ui_text(prop, "Transform Preview", "Show preview of the transformed frames");
   RNA_def_property_update(prop, NC_SPACE | ND_SPACE_SEQUENCER, NULL);
+
+  prop = RNA_def_property(srna, "show_grid", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, NULL, "flag", SEQ_SHOW_GRID);
+  RNA_def_property_ui_text(prop, "Show Grid", "Show vertical grid lines");
+  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_SEQUENCER, NULL);
 }
 
 static void rna_def_space_text(BlenderRNA *brna)
@@ -6545,7 +6567,8 @@ static void rna_def_space_filebrowser(BlenderRNA *brna)
   RNA_def_struct_sdna(srna, "SpaceFile");
   RNA_def_struct_ui_text(srna, "Space File Browser", "File browser space data");
 
-  rna_def_space_generic_show_region_toggles(srna, (1 << RGN_TYPE_TOOLS) | (1 << RGN_TYPE_UI));
+  rna_def_space_generic_show_region_toggles(
+      srna, (1 << RGN_TYPE_TOOLS) | (1 << RGN_TYPE_UI) | (1 << RGN_TYPE_TOOL_PROPS));
 
   prop = RNA_def_property(srna, "browse_mode", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, rna_enum_space_file_browse_mode_items);

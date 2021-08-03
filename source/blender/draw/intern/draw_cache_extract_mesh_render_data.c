@@ -38,7 +38,7 @@
 
 #include "ED_mesh.h"
 
-#include "draw_cache_extract_mesh_private.h"
+#include "mesh_extractors/extract_mesh.h"
 
 /* ---------------------------------------------------------------------- */
 /** \name Update Loose Geometry
@@ -340,10 +340,8 @@ static int *mesh_render_data_mat_tri_len_build(MeshRenderData *mr)
     return mesh_render_data_mat_tri_len_build_threaded(
         mr, bm->totface, mesh_render_data_mat_tri_len_bm_range_fn);
   }
-  else {
-    return mesh_render_data_mat_tri_len_build_threaded(
-        mr, mr->poly_len, mesh_render_data_mat_tri_len_mesh_range_fn);
-  }
+  return mesh_render_data_mat_tri_len_build_threaded(
+      mr, mr->poly_len, mesh_render_data_mat_tri_len_mesh_range_fn);
 }
 
 /** \} */
@@ -462,7 +460,6 @@ void mesh_render_data_update_normals(MeshRenderData *mr, const eMRDataType data_
  * otherwise don't use modifiers as they are not from this object.
  */
 MeshRenderData *mesh_render_data_create(Mesh *me,
-                                        MeshBufferExtractionCache *cache,
                                         const bool is_editmode,
                                         const bool is_paint_mode,
                                         const bool is_mode_active,

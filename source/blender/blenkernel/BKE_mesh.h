@@ -305,6 +305,7 @@ void BKE_mesh_recalc_looptri_with_normals(const struct MLoop *mloop,
 
 /* *** mesh_normals.cc *** */
 
+void BKE_mesh_normals_tag_dirty(struct Mesh *mesh);
 void BKE_mesh_calc_normals_mapping_simple(struct Mesh *me);
 void BKE_mesh_calc_normals_mapping(struct MVert *mverts,
                                    int numVerts,
@@ -424,6 +425,12 @@ void BKE_lnor_spacearr_init(MLoopNorSpaceArray *lnors_spacearr,
                             const char data_type);
 void BKE_lnor_spacearr_clear(MLoopNorSpaceArray *lnors_spacearr);
 void BKE_lnor_spacearr_free(MLoopNorSpaceArray *lnors_spacearr);
+
+void BKE_lnor_spacearr_tls_init(MLoopNorSpaceArray *lnors_spacearr,
+                                MLoopNorSpaceArray *lnors_spacearr_tls);
+void BKE_lnor_spacearr_tls_join(MLoopNorSpaceArray *lnors_spacearr,
+                                MLoopNorSpaceArray *lnors_spacearr_tls);
+
 MLoopNorSpace *BKE_lnor_space_create(MLoopNorSpaceArray *lnors_spacearr);
 void BKE_lnor_space_define(MLoopNorSpace *lnor_space,
                            const float lnor[3],

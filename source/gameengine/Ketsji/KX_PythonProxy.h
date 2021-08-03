@@ -1,4 +1,6 @@
-/*
+/**
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -13,31 +15,50 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2015 Blender Foundation.
- * All rights reserved.
+ * Contributor(s): none yet.
+ *
+ * ***** END GPL LICENSE BLOCK *****
  */
 
-#include "openvdb_transform.h"
+#pragma once
 
-OpenVDBTransform::OpenVDBTransform()
-{
-}
+#include "EXP_Value.h"
 
-OpenVDBTransform::~OpenVDBTransform()
-{
-}
+struct PythonProxy;
 
-void OpenVDBTransform::create_linear_transform(double voxel_size)
-{
-  this->transform = openvdb::math::Transform::createLinearTransform(voxel_size);
-}
+class KX_PythonProxy : public EXP_Value {
 
-const openvdb::math::Transform::Ptr &OpenVDBTransform::get_transform()
-{
-  return this->transform;
-}
+ private:
+  bool m_init;
 
-void OpenVDBTransform::set_transform(const openvdb::math::Transform::Ptr &transform)
-{
-  this->transform = transform;
-}
+  PythonProxy *m_pp;
+
+  PyObject *m_update;
+
+  PyObject *m_dispose;
+
+ public:
+  KX_PythonProxy();
+
+  virtual ~KX_PythonProxy();
+
+  std::string GetName();
+
+  PythonProxy *GetPrototype();
+
+  void SetPrototype(PythonProxy *pp);
+
+  virtual void Start();
+
+  virtual void Update();
+
+  virtual void Dispose();
+
+  virtual KX_PythonProxy *NewInstance() = 0;
+
+  virtual KX_PythonProxy *GetReplica();
+
+  virtual void ProcessReplica();
+
+  void Reset();
+};

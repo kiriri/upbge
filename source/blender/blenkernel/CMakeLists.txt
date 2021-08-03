@@ -197,7 +197,7 @@ set(SRC
   intern/mesh_mirror.c
   intern/mesh_normals.cc
   intern/mesh_remap.c
-  intern/mesh_remesh_voxel.c
+  intern/mesh_remesh_voxel.cc
   intern/mesh_runtime.c
   intern/mesh_sample.cc
   intern/mesh_tangent.c
@@ -241,7 +241,7 @@ set(SRC
   intern/pointcloud.cc
   intern/preferences.c
   intern/property.c
-  intern/python_component.c
+  intern/python_proxy.c
   intern/report.c
   intern/rigidbody.c
   intern/sca.c
@@ -421,7 +421,7 @@ set(SRC
   BKE_pointcloud.h
   BKE_preferences.h
   BKE_property.h
-  BKE_python_component.h
+  BKE_python_proxy.h
   BKE_report.h
   BKE_rigidbody.h
   BKE_sca.h
